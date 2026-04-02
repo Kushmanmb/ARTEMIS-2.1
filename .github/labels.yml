@@ -1,0 +1,93 @@
+# ARTEMIS-2.1 GitHub Labels Configuration
+# This file defines labels for issues and pull requests.
+# Can be synced using actions like EndBug/label-sync or crazy-max/ghaction-github-labeler
+
+# Security-related labels
+- name: "security"
+  color: "d73a4a"
+  description: "Security-related issues or improvements"
+
+- name: "critical"
+  color: "b60205"
+  description: "Critical severity - requires immediate attention"
+
+- name: "high"
+  color: "d93f0b"
+  description: "High severity finding"
+
+- name: "medium"
+  color: "fbca04"
+  description: "Medium severity finding"
+
+- name: "low"
+  color: "0e8a16"
+  description: "Low severity finding"
+
+- name: "info"
+  color: "c5def5"
+  description: "Informational finding"
+
+# Audit-related labels
+- name: "audit"
+  color: "6f42c1"
+  description: "Related to smart contract security auditing"
+
+- name: "auto-fix"
+  color: "1d76db"
+  description: "Automatically fixable by ARTEMIS bot"
+
+- name: "manual-review"
+  color: "e99695"
+  description: "Requires manual security review"
+
+# Development labels
+- name: "bug"
+  color: "d73a4a"
+  description: "Something isn't working"
+
+- name: "enhancement"
+  color: "a2eeef"
+  description: "New feature or request"
+
+- name: "documentation"
+  color: "0075ca"
+  description: "Improvements or additions to documentation"
+
+- name: "ci/cd"
+  color: "000000"
+  description: "Continuous integration and deployment"
+
+# Component labels
+- name: "contracts"
+  color: "5319e7"
+  description: "Changes to Solidity smart contracts"
+
+- name: "bot"
+  color: "bfd4f2"
+  description: "Changes to the Python audit bot"
+
+- name: "tests"
+  color: "f9d0c4"
+  description: "Test-related changes"
+
+# Deployment labels
+- name: "mainnet"
+  color: "0052cc"
+  description: "Related to mainnet deployment"
+
+- name: "testnet"
+  color: "7057ff"
+  description: "Related to testnet deployment"
+
+# Status labels
+- name: "in-progress"
+  color: "ededed"
+  description: "Work in progress"
+
+- name: "needs-review"
+  color: "fbca04"
+  description: "Needs code review"
+
+- name: "blocked"
+  color: "b60205"
+  description: "Blocked by external dependency"

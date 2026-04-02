@@ -1,0 +1,18 @@
+{
+  "_comment": "ARTEMIS-2.1 Mainnet Deployment Record — DO NOT EDIT MANUALLY",
+  "network": "ethereum",
+  "chain_id": 1,
+  "contract_address": null,
+  "tx_hash": null,
+  "block_number": null,
+  "gas_used": null,
+  "deployer": null,
+  "constructor_args": {
+    "ownerName": "Kushmanmb",
+    "projectName": "ARTEMIS-2.1"
+  },
+  "deployed_at": null,
+  "solc_version": "0.8.20",
+  "verified": false,
+  "abi": []
+}

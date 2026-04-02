@@ -18,6 +18,20 @@ on:
         options: ["true", "false"]
 
 jobs:
+  # Auto-label PRs based on changed files
+  labeler:
+    name: Label PR
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/labeler@v5
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          configuration-path: .github/labeler.yml
+
   audit:
     name: Security Audit
     runs-on: ubuntu-latest
@@ -35,6 +49,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      # Cache pip dependencies for faster builds
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -61,6 +84,45 @@ jobs:
           name: artemis-audit-report-${{ github.run_number }}
           path: audit-report.json
           retention-days: 90
+
+      # Generate job summary with audit results
+      - name: Generate Job Summary
+        run: |
+          python - <<'EOF'
+          import json
+          with open("audit-report.json") as f:
+              report = json.load(f)
+          
+          counts = report["summary"]["severity_counts"]
+          files = report["summary"]["files_scanned"]
+          findings = report["summary"]["total_findings"]
+          fixes = report["summary"]["total_auto_fixes_applied"]
+          
+          summary = f"""## 🛡️ ARTEMIS Security Audit Report
+          
+          | Metric | Value |
+          |--------|-------|
+          | Files Scanned | {files} |
+          | Total Findings | {findings} |
+          | Auto-Fixes Applied | {fixes} |
+          
+          ### Severity Breakdown
+          
+          | Severity | Count |
+          |----------|-------|
+          | 💀 CRITICAL | {counts.get('CRITICAL', 0)} |
+          | 🔴 HIGH | {counts.get('HIGH', 0)} |
+          | 🟠 MEDIUM | {counts.get('MEDIUM', 0)} |
+          | 🟡 LOW | {counts.get('LOW', 0)} |
+          | ℹ️ INFO | {counts.get('INFO', 0)} |
+          
+          """
+          
+          # Write to GitHub step summary
+          import os
+          with open(os.environ.get("GITHUB_STEP_SUMMARY", "/dev/null"), "a") as f:
+              f.write(summary)
+          EOF
 
       - name: Commit auto-fixes (if any)
         if: github.event.inputs.auto_fix == 'true' && github.event_name != 'pull_request'

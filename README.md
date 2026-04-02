@@ -18,6 +18,7 @@
 | ⏸ Circuit Breaker | `pause()` / `unpause()` halts sensitive operations the moment an incident is detected |
 | 🔗 Blockchain Monitor | Real-time monitoring of contracts deployed from kushmanmb.base.eth mother contract |
 | 🚨 Security Alerts | Automatic alerts for vulnerabilities in deployed child contracts |
+| 🌐 Mainnet Ready | Deploy to Ethereum mainnet/testnets with built-in deployment workflow |
 
 ---
 
@@ -33,12 +34,25 @@ ARTEMIS-2.1/
 │   ├── auto_fix.py            # Automated source-code patching
 │   ├── blockchain_monitor.py  # Base chain monitoring for kushmanmb.base.eth
 │   └── config.py              # Chain and monitoring configuration
+│   ├── auditor.py           # Main audit bot (CLI entry-point)
+│   ├── security_checks.py   # Vulnerability detection patterns
+│   ├── auto_fix.py          # Automated source-code patching
+│   └── network.py           # Ethereum network integration
+├── scripts/
+│   └── deploy.py            # Contract deployment script
+├── deployments/
+│   ├── mainnet.json         # Ethereum mainnet deployment record
+│   └── sepolia.json         # Sepolia testnet deployment record
 ├── tests/
 │   ├── test_auditor.py        # Unit & integration tests
 │   └── test_blockchain_monitor.py  # Blockchain monitoring tests
 ├── .github/
+│   ├── labels.yml           # GitHub label definitions
+│   ├── labeler.yml          # Auto-labeling configuration
 │   └── workflows/
 │       └── audit.yml          # 24/7 CI audit workflow
+│       ├── audit.yml        # 24/7 CI audit workflow
+│       └── deploy.yml       # Mainnet deployment workflow
 └── requirements.txt
 ```
 
@@ -142,6 +156,22 @@ The `ARTEMIS.sol` contract writes `owner`, `ownerName`, `projectName`, and `depl
 as `immutable` storage at construction time.  These values are burned into the bytecode
 and **cannot be modified** by any transaction — providing verifiable, tamper-proof
 provenance for the smart contract owner.
+
+---
+
+## Caching
+
+ARTEMIS uses two levels of caching:
+
+1. **CI Pip Cache** — Dependencies cached via `actions/cache` for faster CI builds
+2. **RPC Response Cache** — SQLite cache at `.cache/rpc_cache.db` for Etherscan responses
+
+Clear the RPC cache:
+```python
+from bot.network import RPCCache
+cache = RPCCache()
+deleted = cache.clear_old(max_age_seconds=0)  # Clear all
+```
 
 ---
 

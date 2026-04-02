@@ -53,6 +53,8 @@ OWNER_INFO: Dict[str, str] = {
     "owners":     "kushmanmb.eth, yaketh.eth",
     "permissions": "write",
     "repository": "https://github.com/Kushmanmb/ARTEMIS-2.1",
+    "owner":      "Matthew Brace",
+    "repository": "ARTEMIS-2.1",
     "license":    "Apache-2.0",
     "version":    "2.1.0",
 }

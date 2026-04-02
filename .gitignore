@@ -1,3 +1,11 @@
+node_modules/
+.env
+cache/
+artifacts/
+typechain-types/
+coverage/
+coverage.json
+*.log
 # Python cache
 __pycache__/
 *.py[cod]
@@ -25,3 +33,7 @@ build/
 
 # Audit reports (generated at runtime)
 audit-report.json
+
+# Runtime cache files (keep bootstrap.json)
+caches/*.cache
+caches/*.tmp
