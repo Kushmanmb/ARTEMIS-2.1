@@ -11,6 +11,16 @@
         "added_at": "2026-04-02T00:54:07.620Z",
         "added_by": "ARTEMIS-2.1"
       }
+    },
+    {
+      "ens": "kushmanmb.eth",
+      "type": "resolver",
+      "priority": 2,
+      "enabled": true,
+      "metadata": {
+        "added_at": "2026-04-02T00:56:50.127Z",
+        "added_by": "ARTEMIS-2.1"
+      }
     }
   ],
   "cache_settings": {
