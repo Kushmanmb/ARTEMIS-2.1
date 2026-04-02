@@ -1,0 +1,319 @@
+================================================================================
+             ARTEMIS-2.1 SECURITY AUDIT REPORT
+================================================================================
+
+Generated: 2026-04-02 20:40:24 UTC
+Repository: ARTEMIS-2.1
+
+--------------------------------------------------------------------------------
+                         EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+
+VULNERABILITY COUNTS BY SEVERITY (NPM Packages):
+
+  💀 CRITICAL:    0
+  🔴 HIGH:        1
+  🟠 MODERATE:   14
+  🟡 LOW:        20
+  ℹ️  INFO:        0
+
+  📦 TOTAL VULNERABLE PACKAGES: 35
+
+PIP PACKAGES:
+  ✅ No known vulnerabilities found
+
+--------------------------------------------------------------------------------
+                       DETAILED FINDINGS
+--------------------------------------------------------------------------------
+
+
+🔴 HIGH SEVERITY VULNERABILITIES (1)
+============================================================
+
+  📦 Package: undici
+     Affected Range: <=6.23.0
+     Dependency Type: Transitive
+     Fix Available: hardhat@3.3.0
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @nomicfoundation/hardhat-verify, hardhat
+     • Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion
+       URL: https://github.com/advisories/GHSA-g9mf-h72j-4rw9
+     • Undici has an HTTP Request/Response Smuggling issue
+       URL: https://github.com/advisories/GHSA-2mjp-6q6p-2qxm
+     • Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression
+       URL: https://github.com/advisories/GHSA-vrm6-8vpv-qv8q
+
+🟠 MODERATE SEVERITY VULNERABILITIES (14)
+============================================================
+
+  📦 Package: @nomicfoundation/hardhat-chai-matchers
+     Affected Range: <=2.1.2
+     Dependency Type: Direct
+     Fix Available: @nomicfoundation/hardhat-chai-matchers@3.0.0
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @nomicfoundation/hardhat-toolbox
+
+  📦 Package: @nomicfoundation/hardhat-ethers
+     Affected Range: 3.0.7 || 3.1.0 - 3.1.3
+     Dependency Type: Direct
+     Fix Available: @nomicfoundation/hardhat-chai-matchers@3.0.0
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @nomicfoundation/hardhat-chai-matchers, @nomicfoundation/hardhat-ignition-ethers
+
+  📦 Package: @nomicfoundation/hardhat-ignition
+     Affected Range: <=0.15.16
+     Dependency Type: Transitive
+     Fix Available: Yes
+
+  📦 Package: @nomicfoundation/hardhat-ignition-ethers
+     Affected Range: <=0.15.17
+     Dependency Type: Transitive
+     Fix Available: @nomicfoundation/hardhat-toolbox@7.0.0
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @nomicfoundation/hardhat-toolbox
+
+  📦 Package: @nomicfoundation/hardhat-network-helpers
+     Affected Range: <=1.1.2
+     Dependency Type: Direct
+     Fix Available: @nomicfoundation/hardhat-network-helpers@3.0.4
+     ⚠️  Note: Requires breaking change (major version)
+
+  📦 Package: @nomicfoundation/hardhat-toolbox
+     Affected Range: <=6.1.2
+     Dependency Type: Direct
+     Fix Available: @nomicfoundation/hardhat-toolbox@7.0.0
+     ⚠️  Note: Requires breaking change (major version)
+
+  📦 Package: @nomicfoundation/hardhat-verify
+     Affected Range: *
+     Dependency Type: Direct
+     Fix Available: @nomicfoundation/hardhat-verify@3.0.13
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @nomicfoundation/hardhat-ignition, @nomicfoundation/hardhat-toolbox
+
+  📦 Package: @typechain/hardhat
+     Affected Range: >=6.1.0
+     Dependency Type: Direct
+     Fix Available: @typechain/hardhat@6.0.0
+     ⚠️  Note: Requires breaking change (major version)
+
+  📦 Package: bn.js
+     Affected Range: <4.12.3
+     Dependency Type: Transitive
+     Fix Available: solidity-coverage@0.7.22
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: ethjs-unit, number-to-bn
+     • bn.js affected by an infinite loop
+       URL: https://github.com/advisories/GHSA-378v-28hj-76wf
+
+  📦 Package: ethjs-unit
+     Affected Range: >=0.1.3
+     Dependency Type: Transitive
+     Fix Available: solidity-coverage@0.7.22
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: web3-utils
+
+  📦 Package: hardhat
+     Affected Range: 0.1.0-rc.0 - 2.28.6
+     Dependency Type: Direct
+     Fix Available: hardhat@3.3.0
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @nomicfoundation/hardhat-chai-matchers, @nomicfoundation/hardhat-ethers, @nomicfoundation/hardhat-ignition, @nomicfoundation/hardhat-ignition-ethers, @nomicfoundation/hardhat-network-helpers
+              ... and 4 more
+
+  📦 Package: number-to-bn
+     Affected Range: *
+     Dependency Type: Transitive
+     Fix Available: Yes
+
+  📦 Package: solidity-coverage
+     Affected Range: >=0.7.0-beta.0
+     Dependency Type: Direct
+     Fix Available: solidity-coverage@0.7.22
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @nomicfoundation/hardhat-toolbox
+
+  📦 Package: web3-utils
+     Affected Range: 1.0.0-beta.8 - 3.0.0-rc.5
+     Dependency Type: Transitive
+     Fix Available: solidity-coverage@0.7.22
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: solidity-coverage
+
+🟡 LOW SEVERITY VULNERABILITIES (20)
+============================================================
+
+  📦 Package: @ethersproject/abi
+     Affected Range: 5.0.10 - 5.8.0
+     Dependency Type: Transitive
+     Fix Available: @nomicfoundation/hardhat-verify@3.0.13
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @ethersproject/contracts, @nomicfoundation/hardhat-verify, hardhat
+
+  📦 Package: @ethersproject/abstract-provider
+     Affected Range: *
+     Dependency Type: Transitive
+     Fix Available: @nomicfoundation/hardhat-verify@3.0.13
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @ethersproject/abstract-signer, @ethersproject/contracts
+
+  📦 Package: @ethersproject/abstract-signer
+     Affected Range: *
+     Dependency Type: Transitive
+     Fix Available: @nomicfoundation/hardhat-verify@3.0.13
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @ethersproject/hash
+
+  📦 Package: @ethersproject/contracts
+     Affected Range: *
+     Dependency Type: Transitive
+     Fix Available: Yes
+     Affects: ethers
+
+  📦 Package: @ethersproject/hash
+     Affected Range: 5.0.6 - 5.8.0
+     Dependency Type: Transitive
+     Fix Available: @nomicfoundation/hardhat-verify@3.0.13
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @ethersproject/abi, @ethersproject/providers, @ethersproject/wallet, @ethersproject/wordlists, ethers
+
+  📦 Package: @ethersproject/hdnode
+     Affected Range: *
+     Dependency Type: Transitive
+     Fix Available: Yes
+
+  📦 Package: @ethersproject/json-wallets
+     Affected Range: *
+     Dependency Type: Transitive
+     Fix Available: Yes
+
+  📦 Package: @ethersproject/providers
+     Affected Range: <=5.8.0
+     Dependency Type: Transitive
+     Fix Available: Yes
+
+  📦 Package: @ethersproject/signing-key
+     Affected Range: <=5.8.0
+     Dependency Type: Transitive
+     Fix Available: @nomicfoundation/hardhat-verify@3.0.13
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @ethersproject/hdnode, @ethersproject/transactions, @ethersproject/wallet, ethers
+
+  📦 Package: @ethersproject/transactions
+     Affected Range: <=5.8.0
+     Dependency Type: Transitive
+     Fix Available: @nomicfoundation/hardhat-verify@3.0.13
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @ethersproject/abstract-provider, @ethersproject/contracts, @ethersproject/json-wallets, @ethersproject/providers
+
+  📦 Package: @ethersproject/wallet
+     Affected Range: <=5.8.0
+     Dependency Type: Transitive
+     Fix Available: Yes
+
+  📦 Package: @ethersproject/wordlists
+     Affected Range: 5.0.8 - 5.8.0
+     Dependency Type: Transitive
+     Fix Available: Yes
+     Affects: @ethersproject/hdnode, ethers
+
+  📦 Package: elliptic
+     Affected Range: *
+     Dependency Type: Transitive
+     Fix Available: @nomicfoundation/hardhat-network-helpers@3.0.4
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @ethersproject/signing-key, secp256k1
+     • Elliptic Uses a Cryptographic Primitive with a Risky Implementation
+       URL: https://github.com/advisories/GHSA-848j-6mx2-7j84
+
+  📦 Package: eth-gas-reporter
+     Affected Range: >=0.2.26
+     Dependency Type: Transitive
+     Fix Available: Yes
+
+  📦 Package: ethereum-cryptography
+     Affected Range: 0.1.0 - 0.1.3
+     Dependency Type: Transitive
+     Fix Available: @nomicfoundation/hardhat-network-helpers@3.0.4
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: ethereumjs-util
+
+  📦 Package: ethereumjs-util
+     Affected Range: 4.5.1 || 5.2.1 || 6.2.1 || >=7.0.3
+     Dependency Type: Transitive
+     Fix Available: @nomicfoundation/hardhat-network-helpers@3.0.4
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: @nomicfoundation/hardhat-network-helpers
+
+  📦 Package: ethers
+     Affected Range: 5.0.0-beta.119 - 5.8.0
+     Dependency Type: Transitive
+     Fix Available: Yes
+     Affects: eth-gas-reporter
+
+  📦 Package: secp256k1
+     Affected Range: >=2.0.0
+     Dependency Type: Transitive
+     Fix Available: @nomicfoundation/hardhat-network-helpers@3.0.4
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: ethereum-cryptography
+
+  📦 Package: solc
+     Affected Range: >=0.5.1
+     Dependency Type: Transitive
+     Fix Available: hardhat@3.3.0
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: hardhat
+
+  📦 Package: tmp
+     Affected Range: <=0.2.3
+     Dependency Type: Transitive
+     Fix Available: hardhat@3.3.0
+     ⚠️  Note: Requires breaking change (major version)
+     Affects: solc
+     • tmp allows arbitrary temporary file / directory write via symbolic link `dir` parameter
+       URL: https://github.com/advisories/GHSA-52f5-9888-hmc6
+
+--------------------------------------------------------------------------------
+                       RECOMMENDATIONS
+--------------------------------------------------------------------------------
+
+1. IMMEDIATE ACTIONS (for HIGH/CRITICAL vulnerabilities):
+
+   • undici: Upgrade to a patched version when available
+     - Affects HTTP request/response handling
+     - CVEs: GHSA-g9mf-h72j-4rw9, GHSA-2mjp-6q6p-2qxm, etc.
+
+   • serialize-javascript: Vulnerable to RCE via RegExp
+     - Run: npm audit fix --force (will upgrade mocha/solidity-coverage)
+
+2. MEDIUM-TERM ACTIONS:
+
+   • Consider upgrading to Hardhat v3 when stable
+     - Would resolve: cookie, tmp, and several transitive deps
+
+   • Monitor ethers.js v6 migration status
+     - ethers v5 has vulnerable @ethersproject/* dependencies
+
+3. LOW PRIORITY:
+
+   • bn.js infinite loop vulnerability
+     - Low risk: requires specific crafted input
+
+--------------------------------------------------------------------------------
+                      AUTOMATED FIX COMMAND
+--------------------------------------------------------------------------------
+
+To fix vulnerabilities that don't require breaking changes:
+
+  npm audit fix
+
+To fix all vulnerabilities (may include breaking changes):
+
+  npm audit fix --force
+
+⚠️  WARNING: Breaking changes may require code updates. Test thoroughly!
+
+================================================================================
+                       END OF AUDIT REPORT
+================================================================================
