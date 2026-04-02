@@ -391,10 +391,20 @@ def main() -> int:
         log.info("Dry run complete. No deployment made.")
         return 0
     
-    # Load account
+    # Load account with validation
     if private_key.startswith("0x"):
         private_key = private_key[2:]
-    account = Account.from_key(private_key)
+    
+    # Validate private key format (should be 64 hex characters)
+    if len(private_key) != 64 or not all(c in "0123456789abcdefABCDEF" for c in private_key):
+        log.error("Invalid private key format. Expected 64 hex characters (with or without 0x prefix)")
+        return 1
+    
+    try:
+        account = Account.from_key(private_key)
+    except Exception as e:
+        log.error("Failed to load account from private key: %s", e)
+        return 1
     
     balance = w3.eth.get_balance(account.address)
     log.info("Deployer: %s (balance: %s ETH)", 
