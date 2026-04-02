@@ -2,7 +2,7 @@
              ARTEMIS-2.1 SECURITY AUDIT REPORT
 ================================================================================
 
-Generated: 2026-04-02 20:38:25 UTC
+Generated: 2026-04-02 20:40:24 UTC
 Repository: ARTEMIS-2.1
 
 --------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ PIP PACKAGES:
   📦 Package: undici
      Affected Range: <=6.23.0
      Dependency Type: Transitive
-     Fix Available: @nomicfoundation/hardhat-verify@3.0.13
+     Fix Available: hardhat@3.3.0
      ⚠️  Note: Requires breaking change (major version)
      Affects: @nomicfoundation/hardhat-verify, hardhat
      • Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion

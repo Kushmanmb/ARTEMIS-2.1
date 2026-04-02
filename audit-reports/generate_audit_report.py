@@ -89,7 +89,7 @@ def parse_npm_vulnerabilities(audit_data):
 def generate_human_readable_report(npm_vulns, pip_vulns, output_path):
     """Generate a human-readable audit report."""
     
-    report_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    audit_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     
     # Count severities
     npm_severity_counts = {"critical": 0, "high": 0, "moderate": 0, "low": 0, "info": 0}
@@ -104,7 +104,7 @@ def generate_human_readable_report(npm_vulns, pip_vulns, output_path):
         "             ARTEMIS-2.1 SECURITY AUDIT REPORT",
         "=" * 80,
         "",
-        f"Generated: {report_time}",
+        f"Generated: {audit_timestamp}",
         f"Repository: ARTEMIS-2.1",
         "",
         "-" * 80,
