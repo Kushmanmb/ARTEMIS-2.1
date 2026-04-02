@@ -1,3 +1,11 @@
+node_modules/
+.env
+cache/
+artifacts/
+typechain-types/
+coverage/
+coverage.json
+*.log
 # Python cache
 __pycache__/
 *.py[cod]
