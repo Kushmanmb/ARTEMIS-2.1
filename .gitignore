@@ -25,3 +25,7 @@ build/
 
 # Audit reports (generated at runtime)
 audit-report.json
+
+# Runtime cache files (keep bootstrap.json)
+caches/*.cache
+caches/*.tmp
