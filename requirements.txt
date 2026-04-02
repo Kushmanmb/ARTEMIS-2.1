@@ -1,1 +1,10 @@
+# Testing
 pytest>=7.4.0
+
+# Ethereum/Web3 integration for mainnet deployment and contract interaction
+web3>=6.15.1
+py-solc-x>=2.0.3
+eth-account>=0.11.0
+
+# Environment configuration
+python-dotenv>=1.0.1

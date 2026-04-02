@@ -1,0 +1,18 @@
+{
+  "_comment": "ARTEMIS-2.1 Sepolia Testnet Deployment Record",
+  "network": "sepolia",
+  "chain_id": 11155111,
+  "contract_address": null,
+  "tx_hash": null,
+  "block_number": null,
+  "gas_used": null,
+  "deployer": null,
+  "constructor_args": {
+    "ownerName": "Kushmanmb",
+    "projectName": "ARTEMIS-2.1"
+  },
+  "deployed_at": null,
+  "solc_version": "0.8.20",
+  "verified": false,
+  "abi": []
+}
