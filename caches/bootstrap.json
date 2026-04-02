@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "description": "ARTEMIS-2.1 ENS bootstrap cache for trusted nodes",
+  "bootstrap_nodes": [
+    {
+      "ens": "yaketh.eth",
+      "type": "resolver",
+      "priority": 1,
+      "enabled": true,
+      "metadata": {
+        "added_at": "2026-04-02T00:54:07.620Z",
+        "added_by": "ARTEMIS-2.1"
+      }
+    }
+  ],
+  "cache_settings": {
+    "ttl_seconds": 3600,
+    "refresh_on_startup": true,
+    "persist_to_disk": true
+  }
+}
