@@ -58,13 +58,13 @@ class TestChainConfig:
     def test_base_mainnet_config(self):
         assert BASE_MAINNET.chain_id == 8453
         assert BASE_MAINNET.name == "Base Mainnet"
-        assert "base.org" in BASE_MAINNET.rpc_url
-        assert "basescan" in BASE_MAINNET.explorer_url
+        assert BASE_MAINNET.rpc_url == "https://mainnet.base.org"
+        assert BASE_MAINNET.explorer_url == "https://basescan.org"
 
     def test_base_sepolia_config(self):
         assert BASE_SEPOLIA.chain_id == 84532
         assert BASE_SEPOLIA.name == "Base Sepolia"
-        assert "sepolia" in BASE_SEPOLIA.rpc_url
+        assert BASE_SEPOLIA.rpc_url == "https://sepolia.base.org"
 
     def test_ethereum_mainnet_config(self):
         assert ETHEREUM_MAINNET.chain_id == 1
