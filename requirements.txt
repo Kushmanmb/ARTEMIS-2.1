@@ -1,5 +1,7 @@
 # Testing
 pytest>=7.4.0
+web3>=7.0.0
+aiohttp>=3.13.3
 
 # Ethereum/Web3 integration for mainnet deployment and contract interaction
 web3>=6.15.1

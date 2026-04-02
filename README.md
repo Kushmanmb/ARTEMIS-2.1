@@ -2,7 +2,7 @@
 
 **A**utonomous **R**eal-**T**ime **E**thereum **M**onitor & **I**mmutable **S**ecurity
 
-> Space Blockchain smart contract bot — 24/7 continuous security audit, auto-fix, and immutable owner provenance.
+> Space Blockchain smart contract bot — 24/7 continuous security audit, auto-fix, immutable owner provenance, and blockchain monitoring for contracts deployed from kushmanmb.base.eth.
 
 ---
 
@@ -16,6 +16,8 @@
 | 📜 Immutable Owner Info | `ARTEMIS.sol` stores owner address, name, and deploy timestamp as `immutable` values — cannot be changed post-deploy |
 | 🗂 On-Chain Audit Log | Findings can be recorded on-chain via `reportFinding()` so the audit trail is tamper-proof |
 | ⏸ Circuit Breaker | `pause()` / `unpause()` halts sensitive operations the moment an incident is detected |
+| 🔗 Blockchain Monitor | Real-time monitoring of contracts deployed from kushmanmb.base.eth mother contract |
+| 🚨 Security Alerts | Automatic alerts for vulnerabilities in deployed child contracts |
 | 🌐 Mainnet Ready | Deploy to Ethereum mainnet/testnets with built-in deployment workflow |
 
 ---
@@ -25,8 +27,13 @@
 ```
 ARTEMIS-2.1/
 ├── contracts/
-│   └── ARTEMIS.sol          # On-chain security registry & circuit breaker
+│   └── ARTEMIS.sol            # On-chain security registry & circuit breaker
 ├── bot/
+│   ├── auditor.py             # Main audit bot (CLI entry-point)
+│   ├── security_checks.py     # Vulnerability detection patterns
+│   ├── auto_fix.py            # Automated source-code patching
+│   ├── blockchain_monitor.py  # Base chain monitoring for kushmanmb.base.eth
+│   └── config.py              # Chain and monitoring configuration
 │   ├── auditor.py           # Main audit bot (CLI entry-point)
 │   ├── security_checks.py   # Vulnerability detection patterns
 │   ├── auto_fix.py          # Automated source-code patching
@@ -37,11 +44,13 @@ ARTEMIS-2.1/
 │   ├── mainnet.json         # Ethereum mainnet deployment record
 │   └── sepolia.json         # Sepolia testnet deployment record
 ├── tests/
-│   └── test_auditor.py      # Unit & integration tests
+│   ├── test_auditor.py        # Unit & integration tests
+│   └── test_blockchain_monitor.py  # Blockchain monitoring tests
 ├── .github/
 │   ├── labels.yml           # GitHub label definitions
 │   ├── labeler.yml          # Auto-labeling configuration
 │   └── workflows/
+│       └── audit.yml          # 24/7 CI audit workflow
 │       ├── audit.yml        # 24/7 CI audit workflow
 │       └── deploy.yml       # Mainnet deployment workflow
 └── requirements.txt
@@ -73,86 +82,45 @@ python -m pytest tests/ -v
 
 ---
 
-## Network Integration
+## Blockchain Monitoring (kushmanmb.base.eth)
 
-ARTEMIS-2.1 supports fetching and auditing contracts directly from Ethereum networks.
-
-### Supported Networks
-
-| Network | Chain ID | Status |
-|---------|----------|--------|
-| Ethereum Mainnet | 1 | ✅ Supported |
-| Sepolia Testnet | 11155111 | ✅ Supported |
-| Goerli Testnet | 5 | ✅ Supported |
-
-### Fetching Verified Contracts
-
-```python
-from bot.network import EthereumClient
-
-# Initialize client (uses WEB3_RPC_URL env var or default public RPC)
-client = EthereumClient(network="ethereum")
-
-# Fetch verified source from Etherscan
-source = client.fetch_contract_for_audit("0x...")
-if source:
-    from bot.auditor import audit_source
-    findings = audit_source(source, "remote_contract.sol")
-```
-
-### Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `WEB3_RPC_URL` | Ethereum RPC endpoint (Infura/Alchemy) | For network features |
-| `ETHERSCAN_API_KEY` | Etherscan API key for fetching verified source | Optional (rate limited without) |
-| `DEPLOYER_PRIVATE_KEY` | Private key for contract deployment | For deployment only |
-
----
-
-## Deployment
-
-### Deploy to Testnet (Sepolia)
+Monitor and secure all contracts deployed from the mother contract of `kushmanmb.base.eth`:
 
 ```bash
-# Set environment variables
-export WEB3_RPC_URL="https://sepolia.infura.io/v3/YOUR_KEY"
-export DEPLOYER_PRIVATE_KEY="your_private_key_hex"
+# Start blockchain monitoring (Base chain by default)
+python -m bot.auditor --monitor
 
-# Dry run (compile only)
-python scripts/deploy.py --network sepolia --dry-run
+# Monitor with custom RPC endpoint
+python -m bot.auditor --monitor --rpc https://your-rpc-endpoint.com
 
-# Deploy
-python scripts/deploy.py --network sepolia \
-    --owner-name "YourName" \
-    --project-name "ARTEMIS-2.1"
+# Monitor with known mother contract address (skip ENS resolution)
+python -m bot.auditor --monitor --mother 0xYourMotherContractAddress
+
+# Monitor on a different chain
+python -m bot.auditor --monitor --chain ethereum
+
+# Monitor with custom polling interval (in seconds)
+python -m bot.auditor --monitor --interval 30
 ```
 
-### Deploy to Mainnet
+### Monitoring Features
 
-```bash
-# ⚠️ MAINNET - Real funds required!
-export WEB3_RPC_URL="https://mainnet.infura.io/v3/YOUR_KEY"
-export DEPLOYER_PRIVATE_KEY="your_private_key_hex"
+| Feature | Description |
+|---|---|
+| 🔍 ENS/Basenames Resolution | Automatically resolves `kushmanmb.base.eth` to the mother contract address |
+| 📡 Real-time Monitoring | Polls the blockchain for new contract deployments |
+| 🔬 Bytecode Analysis | Analyzes deployed bytecode for dangerous patterns (SELFDESTRUCT, DELEGATECALL, etc.) |
+| 📊 Source Code Audit | If source is available, runs full security checks |
+| 🚨 Alert System | Generates alerts for HIGH and CRITICAL severity findings |
+| ⏸ Auto-Pause | Automatically pauses monitoring when critical issues are detected |
 
-python scripts/deploy.py --network ethereum \
-    --owner-name "Kushmanmb" \
-    --project-name "ARTEMIS-2.1"
-```
+### Supported Chains
 
-### GitHub Actions Deployment
-
-Use the **Deploy to Network** workflow (`workflow_dispatch`) to deploy from CI:
-
-1. Go to **Actions** → **ARTEMIS-2.1 Deploy to Network**
-2. Click **Run workflow**
-3. Select network, enter constructor arguments
-4. Enable **dry_run** for testing, disable for actual deployment
-
-Required repository secrets:
-- `WEB3_RPC_URL` — RPC endpoint
-- `DEPLOYER_PRIVATE_KEY` — Deployer wallet private key
-- `ETHERSCAN_API_KEY` — (Optional) For contract verification
+| Chain | Chain ID | RPC Endpoint |
+|---|---|---|
+| Base Mainnet | 8453 | https://mainnet.base.org |
+| Base Sepolia | 84532 | https://sepolia.base.org |
+| Ethereum Mainnet | 1 | https://eth.llamarpc.com |
 
 ---
 
@@ -168,6 +136,17 @@ Required repository secrets:
 | `MISSING_ACCESS_CONTROL` | MEDIUM | ❌ (manual review needed) |
 | `HARDCODED_ADDRESS` | LOW | ❌ (manual review needed) |
 | `MISSING_SPDX_LICENSE` | INFO | ✅ (prepend header) |
+
+### Bytecode Analysis (Blockchain Monitor)
+
+| Check | Severity | Description |
+|---|---|---|
+| `BYTECODE_SELFDESTRUCT` | CRITICAL | Contract contains SELFDESTRUCT opcode |
+| `BYTECODE_DELEGATECALL` | HIGH | Contract uses DELEGATECALL |
+| `BYTECODE_CALLCODE` | HIGH | Contract uses deprecated CALLCODE |
+| `BYTECODE_CREATE2` | MEDIUM | Contract uses CREATE2 |
+| `KNOWN_MALICIOUS_BYTECODE` | CRITICAL | Bytecode matches known malicious pattern |
+| `SUSPICIOUS_SHORT_BYTECODE` | LOW | Unusually short bytecode (proxy/stub) |
 
 ---
 

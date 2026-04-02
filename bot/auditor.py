@@ -13,6 +13,10 @@ Options:
     --interval  Seconds between scans in watch mode. Default: 300 (5 minutes).
     --report    Write a JSON report to this file path.
     --fix       Automatically apply safe code fixes and overwrite source files.
+    --monitor   Enable blockchain monitoring mode for kushmanmb.base.eth
+    --chain     Blockchain to monitor (default: base). Options: base, base-sepolia, ethereum
+    --rpc       Custom RPC endpoint URL
+    --mother    Mother contract address (overrides ENS resolution)
 """
 
 from __future__ import annotations
@@ -46,6 +50,9 @@ log = logging.getLogger("artemis")
 # ---------------------------------------------------------------------------
 OWNER_INFO: Dict[str, str] = {
     "project":    "ARTEMIS-2.1",
+    "owners":     "kushmanmb.eth, yaketh.eth",
+    "permissions": "write",
+    "repository": "https://github.com/Kushmanmb/ARTEMIS-2.1",
     "owner":      "Matthew Brace",
     "repository": "ARTEMIS-2.1",
     "license":    "Apache-2.0",
@@ -231,6 +238,32 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Automatically apply safe code fixes and overwrite source files",
     )
+    # Blockchain monitoring arguments
+    parser.add_argument(
+        "--monitor",
+        action="store_true",
+        help="Enable blockchain monitoring mode for contracts deployed from mother contract",
+    )
+    parser.add_argument(
+        "--chain",
+        default="base",
+        help="Blockchain to monitor (default: base). Options: base, base-sepolia, ethereum",
+    )
+    parser.add_argument(
+        "--rpc",
+        default=None,
+        help="Custom RPC endpoint URL for blockchain connection",
+    )
+    parser.add_argument(
+        "--mother",
+        default=None,
+        help="Mother contract address (overrides ENS resolution of kushmanmb.base.eth)",
+    )
+    parser.add_argument(
+        "--ens",
+        default="kushmanmb.base.eth",
+        help="ENS/Basename to resolve for mother contract (default: kushmanmb.base.eth)",
+    )
     return parser.parse_args(argv)
 
 
@@ -257,14 +290,20 @@ def run_scan(target: Path, auto_fix: bool, report_path: str | None) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    
+    log.info("🚀 ARTEMIS-2.1 starting — owner: %s | repo: %s",
+             OWNER_INFO["owner"], OWNER_INFO["repository"])
+    
+    # Blockchain monitoring mode
+    if args.monitor:
+        return run_blockchain_monitor(args)
+    
+    # Standard file-based audit mode
     target = Path(args.path)
 
     if not target.exists():
         log.error("Path not found: %s", target)
         return 2
-
-    log.info("🚀 ARTEMIS-2.1 starting — owner: %s | repo: %s",
-             OWNER_INFO["owner"], OWNER_INFO["repository"])
 
     if args.watch:
         log.info("👁  Watch mode enabled — scanning every %ds", args.interval)
@@ -277,6 +316,65 @@ def main(argv: list[str] | None = None) -> int:
             time.sleep(args.interval)
     else:
         return run_scan(target, args.fix, args.report)
+
+
+def run_blockchain_monitor(args: argparse.Namespace) -> int:
+    """Run the blockchain monitoring mode."""
+    try:
+        from bot.blockchain_monitor import create_monitor, BlockchainMonitor
+    except ImportError as e:
+        log.error("Blockchain monitoring requires web3. Install with: pip install web3")
+        log.error("Import error: %s", e)
+        return 2
+    
+    log.info("🔗 Starting blockchain monitoring mode")
+    log.info("📍 ENS Name: %s", args.ens)
+    log.info("⛓  Chain: %s", args.chain)
+    
+    if args.mother:
+        log.info("📬 Using pre-resolved address: %s", args.mother)
+    
+    # Create the monitor
+    monitor = create_monitor(
+        ens_name=args.ens,
+        chain_name=args.chain,
+        rpc_url=args.rpc,
+        resolved_address=args.mother,
+        poll_interval=args.interval,
+    )
+    
+    # Connect to blockchain
+    if not monitor.connect(args.rpc):
+        log.error("Failed to connect to blockchain")
+        return 2
+    
+    # If no pre-resolved address, try to resolve ENS
+    if not args.mother:
+        address = monitor.resolve_mother_contract()
+        if not address:
+            log.error(
+                "Could not resolve %s. Please provide the mother contract address "
+                "manually with --mother <address>",
+                args.ens
+            )
+            return 2
+    
+    try:
+        # Run the monitor
+        monitor.run()
+    except KeyboardInterrupt:
+        log.info("Received interrupt signal, stopping monitor...")
+        monitor.stop()
+    
+    # Print final status
+    status = monitor.get_status()
+    log.info("📊 Final Statistics:")
+    log.info("   Contracts found: %d", status["statistics"]["total_contracts_found"])
+    log.info("   Audits performed: %d", status["statistics"]["total_audits_performed"])
+    log.info("   Critical findings: %d", status["statistics"]["critical_findings"])
+    log.info("   High findings: %d", status["statistics"]["high_findings"])
+    
+    return 0
 
 
 if __name__ == "__main__":
