@@ -332,7 +332,7 @@ class TestBuildReport:
 
     def test_report_has_owner_info(self):
         report = build_report(self._make_results({"test.sol": []}))
-        assert report["meta"]["owner"] == OWNER_INFO["owner"]
+        assert report["meta"]["owners"] == OWNER_INFO["owners"]
         assert report["meta"]["project"] == OWNER_INFO["project"]
         assert report["meta"]["repository"] == OWNER_INFO["repository"]
 

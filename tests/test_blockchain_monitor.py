@@ -22,9 +22,13 @@ from bot.config import (
     ChainConfig,
     MonitorConfig,
     MotherContractConfig,
+    OwnerConfig,
     DEFAULT_MOTHER_CONTRACT,
     DEFAULT_MONITOR_CONFIG,
+    AUTHORIZED_OWNERS,
     get_chain_config,
+    get_owner_ens_names,
+    is_write_authorized,
     create_mother_contract_config,
     BASE_MAINNET,
     BASE_SEPOLIA,
@@ -141,6 +145,43 @@ class TestCreateMotherContractConfig:
         address = "0x1234567890123456789012345678901234567890"
         config = create_mother_contract_config(resolved_address=address)
         assert config.resolved_address == address
+
+
+# ---------------------------------------------------------------------------
+# Authorized Owner Tests
+# ---------------------------------------------------------------------------
+
+class TestAuthorizedOwners:
+    def test_exactly_two_authorized_owners(self):
+        assert len(AUTHORIZED_OWNERS) == 2
+
+    def test_kushmanmb_eth_present(self):
+        names = get_owner_ens_names()
+        assert "kushmanmb.eth" in names
+
+    def test_yaketh_eth_present(self):
+        names = get_owner_ens_names()
+        assert "yaketh.eth" in names
+
+    def test_kushmanmb_has_write_permission(self):
+        assert is_write_authorized("kushmanmb.eth")
+
+    def test_yaketh_has_write_permission(self):
+        assert is_write_authorized("yaketh.eth")
+
+    def test_unknown_ens_not_authorized(self):
+        assert not is_write_authorized("unknown.eth")
+
+    def test_all_owners_have_write_permission(self):
+        for owner in AUTHORIZED_OWNERS:
+            assert "write" in owner.permissions, \
+                f"{owner.ens_name} is missing write permission"
+
+    def test_owner_config_structure(self):
+        for owner in AUTHORIZED_OWNERS:
+            assert owner.ens_name.endswith(".eth")
+            assert isinstance(owner.permissions, list)
+            assert len(owner.permissions) > 0
 
 
 # ---------------------------------------------------------------------------

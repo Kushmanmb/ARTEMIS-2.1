@@ -22,6 +22,14 @@ class ChainConfig:
 
 
 @dataclass
+class OwnerConfig:
+    """Configuration for an authorized owner."""
+    ens_name: str
+    permissions: List[str]  # e.g. ["write"]
+    resolved_address: Optional[str] = None
+
+
+@dataclass
 class MotherContractConfig:
     """Configuration for the mother contract to monitor."""
     ens_name: str
@@ -67,6 +75,35 @@ CHAINS: Dict[str, ChainConfig] = {
     "ethereum": ETHEREUM_MAINNET,
     "eth": ETHEREUM_MAINNET,
 }
+
+
+# ---------------------------------------------------------------------------
+# Authorized Owners — kushmanmb.eth and yaketh.eth (both with write access)
+# ---------------------------------------------------------------------------
+
+AUTHORIZED_OWNERS: List[OwnerConfig] = [
+    OwnerConfig(
+        ens_name="kushmanmb.eth",
+        permissions=["write"],
+    ),
+    OwnerConfig(
+        ens_name="yaketh.eth",
+        permissions=["write"],
+    ),
+]
+
+
+def get_owner_ens_names() -> List[str]:
+    """Return the ENS names of all authorized owners."""
+    return [o.ens_name for o in AUTHORIZED_OWNERS]
+
+
+def is_write_authorized(ens_name: str) -> bool:
+    """Return True if the given ENS name has write permission."""
+    return any(
+        o.ens_name == ens_name and "write" in o.permissions
+        for o in AUTHORIZED_OWNERS
+    )
 
 
 # ---------------------------------------------------------------------------
