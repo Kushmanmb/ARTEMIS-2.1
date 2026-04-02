@@ -1,0 +1,47 @@
+# ARTEMIS-2.1 PR Labeler Configuration
+# Used by actions/labeler to automatically label PRs based on changed files
+
+# Contract changes
+contracts:
+  - changed-files:
+      - any-glob-to-any-file: 'contracts/**/*.sol'
+
+# Bot/Python changes
+bot:
+  - changed-files:
+      - any-glob-to-any-file: 'bot/**/*.py'
+
+# Test changes
+tests:
+  - changed-files:
+      - any-glob-to-any-file: 'tests/**/*.py'
+
+# Documentation changes
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - 'docs/**/*'
+
+# CI/CD changes
+ci/cd:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**/*'
+          - '.github/actions/**/*'
+
+# Security-related files
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'bot/security_checks.py'
+          - 'bot/auto_fix.py'
+          - 'contracts/**/*.sol'
+
+# Deployment-related files
+mainnet:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'scripts/deploy.py'
+          - 'deployments/**/*'
+          - '.github/workflows/deploy.yml'

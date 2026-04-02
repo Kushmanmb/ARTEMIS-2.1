@@ -1,0 +1,152 @@
+name: ARTEMIS-2.1 Deploy to Network
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: "Target network"
+        required: true
+        type: choice
+        options:
+          - sepolia
+          - goerli
+          - ethereum
+        default: "sepolia"
+      owner_name:
+        description: "Owner name for contract constructor"
+        required: false
+        default: "Kushmanmb"
+      project_name:
+        description: "Project name for contract constructor"
+        required: false
+        default: "ARTEMIS-2.1"
+      gas_price:
+        description: "Gas price in Gwei (leave empty for auto)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Dry run (compile only, no deployment)"
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  deploy:
+    name: Deploy ARTEMIS Contract
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Cache pip dependencies
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-deploy-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-deploy-
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Cache Solidity compiler
+      - name: Cache solc compiler
+        uses: actions/cache@v4
+        with:
+          path: ~/.solcx
+          key: ${{ runner.os }}-solc-0.8.20
+
+      - name: Validate deployment secrets
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          if [ -z "${{ secrets.WEB3_RPC_URL }}" ]; then
+            echo "❌ WEB3_RPC_URL secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DEPLOYER_PRIVATE_KEY }}" ]; then
+            echo "❌ DEPLOYER_PRIVATE_KEY secret is not set"
+            exit 1
+          fi
+          echo "✅ Required secrets are configured"
+
+      - name: Deploy contract
+        id: deploy
+        env:
+          WEB3_RPC_URL: ${{ secrets.WEB3_RPC_URL }}
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: |
+          DRY_RUN_FLAG=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+          
+          GAS_FLAG=""
+          if [ -n "${{ github.event.inputs.gas_price }}" ]; then
+            GAS_FLAG="--gas-price ${{ github.event.inputs.gas_price }}"
+          fi
+          
+          # For mainnet, add DEPLOY confirmation via echo (CI doesn't have interactive input)
+          if [ "${{ github.event.inputs.network }}" = "ethereum" ] && [ -z "$DRY_RUN_FLAG" ]; then
+            echo "DEPLOY" | python scripts/deploy.py \
+              --network ${{ github.event.inputs.network }} \
+              --owner-name "${{ github.event.inputs.owner_name }}" \
+              --project-name "${{ github.event.inputs.project_name }}" \
+              $GAS_FLAG
+          else
+            python scripts/deploy.py \
+              --network ${{ github.event.inputs.network }} \
+              --owner-name "${{ github.event.inputs.owner_name }}" \
+              --project-name "${{ github.event.inputs.project_name }}" \
+              $DRY_RUN_FLAG \
+              $GAS_FLAG
+          fi
+
+      - name: Commit deployment record
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          git config user.name "ARTEMIS Bot"
+          git config user.email "artemis-bot@users.noreply.github.com"
+          if ! git diff --quiet deployments/; then
+            git add deployments/
+            git commit -m "chore(deploy): ARTEMIS deployed to ${{ github.event.inputs.network }} — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+          fi
+
+      - name: Generate deployment summary
+        run: |
+          cat <<EOF >> $GITHUB_STEP_SUMMARY
+          ## 🚀 ARTEMIS Deployment
+          
+          | Parameter | Value |
+          |-----------|-------|
+          | Network | ${{ github.event.inputs.network }} |
+          | Owner Name | ${{ github.event.inputs.owner_name }} |
+          | Project Name | ${{ github.event.inputs.project_name }} |
+          | Dry Run | ${{ github.event.inputs.dry_run }} |
+          
+          EOF
+          
+          if [ -f "deployments/${{ github.event.inputs.network }}.json" ]; then
+            echo "### Deployment Record" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat "deployments/${{ github.event.inputs.network }}.json" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-${{ github.event.inputs.network }}-${{ github.run_number }}
+          path: deployments/
+          retention-days: 365
