@@ -1,0 +1,31 @@
+name: ARTEMIS Snapshot API Security Tests
+
+on:
+  pull_request:
+    paths:
+      - "bot/snapshot_api.py"
+      - "tests/test_snapshot_api.py"
+      - ".github/workflows/snapshot-api.yml"
+  push:
+    branches: [main]
+    paths:
+      - "bot/snapshot_api.py"
+      - "tests/test_snapshot_api.py"
+      - ".github/workflows/snapshot-api.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot-api:
+    name: Snapshot API read-only/auth tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test runner
+        run: python -m pip install pytest
+      - name: Run snapshot API regression tests
+        run: python -m pytest tests/test_snapshot_api.py -q
