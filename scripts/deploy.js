@@ -1,32 +1,18 @@
-const hre = require("hardhat");
+import { network } from "hardhat";
 
-async function main() {
-  console.log("Deploying Artemis contract to", hre.network.name);
+// Deploys the simple Artemis ownership contract (contracts/ArtemisOwnable.sol).
+// The full multi-owner ARTEMIS.sol contract is deployed by scripts/deploy.py.
+// Verify afterwards with: npx hardhat verify --network <network> <address>
+const { ethers, networkName, networkConfig } = await network.getOrCreate();
 
-  const Artemis = await hre.ethers.getContractFactory("Artemis");
-  const artemis = await Artemis.deploy();
+console.log("Deploying Artemis contract to", networkName);
+const artemis = await ethers.deployContract("Artemis");
+await artemis.waitForDeployment();
+const address = await artemis.getAddress();
+console.log("Artemis deployed to:", address);
 
-  await artemis.waitForDeployment();
-
-  const address = await artemis.getAddress();
-  console.log("Artemis deployed to:", address);
-
-  // Wait for a few block confirmations before verifying
-  if (hre.network.name !== "hardhat" && hre.network.name !== "localhost") {
-    console.log("Waiting for block confirmations...");
-    await artemis.deploymentTransaction().wait(5);
-
-    console.log("Verifying contract on Etherscan...");
-    await hre.run("verify:verify", {
-      address: address,
-      constructorArguments: [],
-    });
-  }
+if (networkConfig.type === "http") {
+  console.log("Waiting for 5 confirmations...");
+  await artemis.deploymentTransaction().wait(5);
+  console.log(`Verify with: npx hardhat verify --network ${networkName} ${address}`);
 }
-
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });

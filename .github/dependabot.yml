@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm-dependencies:
+        patterns: ["*"]
+    ignore:
+      # Hardhat and its Zod patches are pinned together; update them deliberately.
+      - dependency-name: "hardhat"
+      - dependency-name: "@nomicfoundation/*"
+      - dependency-name: "zod"
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -4,14 +4,12 @@
   "description": "Space Blockchain smart contract bot for Ethereum mainnet",
   "main": "index.js",
   "scripts": {
-    "compile": "hardhat compile",
+    "postinstall": "node scripts/apply-dev-patches.cjs",
+    "compile": "hardhat build",
     "test": "hardhat test",
     "deploy": "hardhat run scripts/deploy.js --network sepolia",
     "deploy:mainnet": "hardhat run scripts/deploy.js --network mainnet",
-    "lint": "eslint . --ext .js,.ts",
-    "lint:fix": "eslint . --ext .js,.ts --fix",
     "audit": "npm audit",
-    "audit:fix": "npm audit fix",
     "audit:report": "python audit-reports/generate_audit_report.py"
   },
   "keywords": [
@@ -22,33 +20,33 @@
     "bot"
   ],
   "author": "",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
-    "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
-    "@nomicfoundation/hardhat-ethers": "^3.0.8",
-    "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "@nomicfoundation/hardhat-verify": "^2.0.12",
-    "@typechain/ethers-v6": "^0.5.1",
-    "@typechain/hardhat": "^9.1.0",
-    "@types/chai": "^4.3.20",
+    "@nomicfoundation/hardhat-ethers": "4.2.2",
+    "@nomicfoundation/hardhat-mocha": "4.0.1",
+    "@nomicfoundation/hardhat-toolbox-mocha-ethers": "4.0.0",
+    "@nomicfoundation/hardhat-zod-utils": "3.0.8",
+    "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^22.15.8",
-    "chai": "^4.5.0",
-    "hardhat": "^2.28.6",
-    "hardhat-gas-reporter": "^1.0.10",
-    "solidity-coverage": "^0.8.15",
-    "ts-node": "^10.9.2",
-    "typechain": "^8.3.2",
-    "typescript": "^5.9.3"
+    "@types/node": "^22.0.0",
+    "chai": "6.3.0",
+    "hardhat": "3.21.2",
+    "mocha": "12.0.3",
+    "typescript": "5.9.3",
+    "zod": "4.6.7"
   },
   "dependencies": {
     "dotenv": "^16.6.1",
     "ethers": "^6.14.0"
   },
   "overrides": {
-    "serialize-javascript": ">=7.0.5",
-    "cookie": ">=0.7.0",
-    "lodash": ">=4.18.0"
+    "glob": "14.0.3",
+    "minimatch": "11.0.3",
+    "tmp": "0.2.7",
+    "zod": "$zod"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
   }
 }
