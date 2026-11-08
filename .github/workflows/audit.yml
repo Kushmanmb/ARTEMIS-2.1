@@ -79,7 +79,7 @@ jobs:
         continue-on-error: true   # upload report even if findings exist
 
       - name: Upload audit report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: artemis-audit-report-${{ github.run_number }}
           path: audit-report.json
