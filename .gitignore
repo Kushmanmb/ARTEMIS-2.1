@@ -37,3 +37,6 @@ audit-report.json
 # Runtime cache files (keep bootstrap.json)
 caches/*.cache
 caches/*.tmp
+
+# Hardhat 3 generated types
+types/

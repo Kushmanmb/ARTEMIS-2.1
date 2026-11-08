@@ -1,33 +1,39 @@
-require("@nomicfoundation/hardhat-toolbox");
-require("dotenv").config();
+import { defineConfig, configVariable } from "hardhat/config";
+import hardhatToolboxMochaEthers from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
+import * as dotenv from "dotenv";
 
-/** @type import('hardhat/config').HardhatUserConfig */
-module.exports = {
+dotenv.config();
+
+// Remote networks are only configured when their RPC URL is present, so local
+// compile/test never needs secrets. PRIVATE_KEY is read through Hardhat's
+// configVariable() and is never written to disk or logged.
+const remote = (name, chainId) =>
+  process.env[`${name}_RPC_URL`]
+    ? {
+        [name.toLowerCase()]: {
+          type: "http",
+          chainType: "l1",
+          chainId,
+          url: process.env[`${name}_RPC_URL`],
+          accounts: [configVariable("PRIVATE_KEY")],
+        },
+      }
+    : {};
+
+export default defineConfig({
+  plugins: [hardhatToolboxMochaEthers],
   solidity: {
     version: "0.8.20",
     settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
-      },
+      optimizer: { enabled: true, runs: 200 },
     },
   },
   networks: {
-    hardhat: {
-      chainId: 31337,
-    },
-    mainnet: {
-      url: process.env.MAINNET_RPC_URL || "https://eth-mainnet.g.alchemy.com/v2/your-api-key",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 1,
-    },
-    sepolia: {
-      url: process.env.SEPOLIA_RPC_URL || "https://eth-sepolia.g.alchemy.com/v2/your-api-key",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 11155111,
-    },
+    hardhat: { type: "edr-simulated", chainType: "l1" },
+    ...remote("MAINNET", 1),
+    ...remote("SEPOLIA", 11155111),
   },
-  etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY || "",
+  verify: {
+    etherscan: { apiKey: process.env.ETHERSCAN_API_KEY || "" },
   },
-};
+});

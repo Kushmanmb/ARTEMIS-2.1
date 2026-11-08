@@ -1,0 +1,64 @@
+diff --git a/node_modules/@nomicfoundation/hardhat-mocha/dist/src/hookHandlers/config.js b/node_modules/@nomicfoundation/hardhat-mocha/dist/src/hookHandlers/config.js
+index 749362a..e7b3adf 100644
+--- a/node_modules/@nomicfoundation/hardhat-mocha/dist/src/hookHandlers/config.js
++++ b/node_modules/@nomicfoundation/hardhat-mocha/dist/src/hookHandlers/config.js
+@@ -2,6 +2,7 @@ import { isObject } from "@nomicfoundation/hardhat-utils/lang";
+ import { resolveFromRoot } from "@nomicfoundation/hardhat-utils/path";
+ import { conditionalUnionType, unionType, validateUserConfigZodType, } from "@nomicfoundation/hardhat-zod-utils";
+ import { z } from "zod";
++const functionSchema = z.custom((value) => typeof value === "function");
+ const mochaConfigType = z.object({
+     allowUncaught: z.boolean().optional(),
+     asyncOnly: z.boolean().optional(),
+@@ -37,10 +38,10 @@ const mochaConfigType = z.object({
+     jobs: z.number().optional(),
+     rootHooks: z
+         .object({
+-        afterAll: unionType([z.function(), z.array(z.function())], "Expected a function or an array of functions").optional(),
+-        beforeAll: unionType([z.function(), z.array(z.function())], "Expected a function or an array of functions").optional(),
+-        afterEach: unionType([z.function(), z.array(z.function())], "Expected a function or an array of functions").optional(),
+-        beforeEach: unionType([z.function(), z.array(z.function())], "Expected a function or an array of functions").optional(),
++        afterAll: unionType([functionSchema, z.array(functionSchema)], "Expected a function or an array of functions").optional(),
++        beforeAll: unionType([functionSchema, z.array(functionSchema)], "Expected a function or an array of functions").optional(),
++        afterEach: unionType([functionSchema, z.array(functionSchema)], "Expected a function or an array of functions").optional(),
++        beforeEach: unionType([functionSchema, z.array(functionSchema)], "Expected a function or an array of functions").optional(),
+     })
+         .optional(),
+     require: z.array(z.string()).optional(),
+diff --git a/node_modules/@nomicfoundation/hardhat-mocha/src/hookHandlers/config.ts b/node_modules/@nomicfoundation/hardhat-mocha/src/hookHandlers/config.ts
+index 9bdd549..042f7a8 100644
+--- a/node_modules/@nomicfoundation/hardhat-mocha/src/hookHandlers/config.ts
++++ b/node_modules/@nomicfoundation/hardhat-mocha/src/hookHandlers/config.ts
+@@ -9,6 +9,8 @@ import {
+ } from "@nomicfoundation/hardhat-zod-utils";
+ import { z } from "zod";
+ 
++const functionSchema = z.custom((value) => typeof value === "function");
++
+ const mochaConfigType = z.object({
+   allowUncaught: z.boolean().optional(),
+   asyncOnly: z.boolean().optional(),
+@@ -51,19 +53,19 @@ const mochaConfigType = z.object({
+   rootHooks: z
+     .object({
+       afterAll: unionType(
+-        [z.function(), z.array(z.function())],
++        [functionSchema, z.array(functionSchema)],
+         "Expected a function or an array of functions",
+       ).optional(),
+       beforeAll: unionType(
+-        [z.function(), z.array(z.function())],
++        [functionSchema, z.array(functionSchema)],
+         "Expected a function or an array of functions",
+       ).optional(),
+       afterEach: unionType(
+-        [z.function(), z.array(z.function())],
++        [functionSchema, z.array(functionSchema)],
+         "Expected a function or an array of functions",
+       ).optional(),
+       beforeEach: unionType(
+-        [z.function(), z.array(z.function())],
++        [functionSchema, z.array(functionSchema)],
+         "Expected a function or an array of functions",
+       ).optional(),
+     })

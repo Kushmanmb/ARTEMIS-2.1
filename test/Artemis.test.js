@@ -1,15 +1,16 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+import { expect } from "chai";
+import { network } from "hardhat";
 
-describe("Artemis", function () {
+const { ethers } = await network.create();
+
+describe("Artemis (ArtemisOwnable.sol)", function () {
   let artemis;
   let owner;
   let addr1;
 
   beforeEach(async function () {
     [owner, addr1] = await ethers.getSigners();
-    const Artemis = await ethers.getContractFactory("Artemis");
-    artemis = await Artemis.deploy();
+    artemis = await ethers.deployContract("Artemis");
   });
 
   describe("Deployment", function () {

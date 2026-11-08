@@ -1,0 +1,209 @@
+diff --git a/node_modules/@nomicfoundation/hardhat-zod-utils/dist/src/index.d.ts b/node_modules/@nomicfoundation/hardhat-zod-utils/dist/src/index.d.ts
+index 9c47e24..8d9a1a6 100644
+--- a/node_modules/@nomicfoundation/hardhat-zod-utils/dist/src/index.d.ts
++++ b/node_modules/@nomicfoundation/hardhat-zod-utils/dist/src/index.d.ts
+@@ -1,4 +1,4 @@
+-import type { ZodTypeDef, ZodType } from "zod";
++import type { ZodType } from "zod";
+ import { z } from "zod";
+ /**
+  * We use `unknown` here to avoid a circular dependency between the Hardhat and
+@@ -24,7 +24,7 @@ export interface HardhatUserConfigValidationError {
+  * If you have a type that's complex, like an object or array, you must use
+  * {@link conditionalUnionType}.
+  */
+-export declare const unionType: (types: Parameters<typeof z.union>[0], errorMessage: string) => z.ZodEffects<z.ZodAny, any, any>;
++export declare const unionType: (types: ReadonlyArray<ZodType>, errorMessage: string) => z.ZodAny;
+ /**
+  * A Zod union type that allows you to provide hints to Zod about which of the
+  * type variant it should use.
+@@ -57,7 +57,7 @@ export declare const unionType: (types: Parameters<typeof z.union>[0], errorMess
+  * returns true.
+  * @returns The conditional union ZodType.
+  */
+-export declare const conditionalUnionType: (cases: Array<[predicate: (data: unknown) => boolean, zodType: ZodType<any>]>, noMatchMessage: string) => z.ZodEffects<z.ZodAny, any, any>;
++export declare const conditionalUnionType: (cases: Array<[predicate: (data: unknown) => boolean, zodType: ZodType<any>]>, noMatchMessage: string) => z.ZodAny;
+ /**
+  * Creates a Zod type to validate that a field of an object doesn't exist.
+  *
+@@ -97,39 +97,17 @@ export declare const configurationVariableSchema: z.ZodObject<{
+     name: z.ZodString;
+     format: z.ZodOptional<z.ZodString>;
+     default: z.ZodOptional<z.ZodString>;
+-}, "strip", z.ZodTypeAny, {
+-    _type: "ConfigurationVariable";
+-    name: string;
+-    format?: string | undefined;
+-    default?: string | undefined;
+-}, {
+-    _type: "ConfigurationVariable";
+-    name: string;
+-    format?: string | undefined;
+-    default?: string | undefined;
+-}>;
++}, z.core.$strip>;
+ /**
+  * A Zod type to validate Hardhat's ResolvedConfigurationVariable objects.
+  */
+ export declare const resolvedConfigurationVariableSchema: z.ZodObject<{
+     _type: z.ZodLiteral<"ResolvedConfigurationVariable">;
+-    get: z.ZodFunction<z.ZodTuple<[], z.ZodUnknown>, z.ZodUnknown>;
+-    getUrl: z.ZodFunction<z.ZodTuple<[], z.ZodUnknown>, z.ZodUnknown>;
+-    getBigInt: z.ZodFunction<z.ZodTuple<[], z.ZodUnknown>, z.ZodUnknown>;
+-    getHexString: z.ZodFunction<z.ZodTuple<[], z.ZodUnknown>, z.ZodUnknown>;
+-}, "strip", z.ZodTypeAny, {
+-    _type: "ResolvedConfigurationVariable";
+-    get: (...args: unknown[]) => unknown;
+-    getUrl: (...args: unknown[]) => unknown;
+-    getBigInt: (...args: unknown[]) => unknown;
+-    getHexString: (...args: unknown[]) => unknown;
+-}, {
+-    _type: "ResolvedConfigurationVariable";
+-    get: (...args: unknown[]) => unknown;
+-    getUrl: (...args: unknown[]) => unknown;
+-    getBigInt: (...args: unknown[]) => unknown;
+-    getHexString: (...args: unknown[]) => unknown;
+-}>;
++    get: z.ZodCustom<(...args: unknown[]) => unknown, (...args: unknown[]) => unknown>;
++    getUrl: z.ZodCustom<(...args: unknown[]) => unknown, (...args: unknown[]) => unknown>;
++    getBigInt: z.ZodCustom<(...args: unknown[]) => unknown, (...args: unknown[]) => unknown>;
++    getHexString: z.ZodCustom<(...args: unknown[]) => unknown, (...args: unknown[]) => unknown>;
++}, z.core.$strip>;
+ /**
+  * A Zod type to validate Hardhat's SensitiveString values.
+  */
+@@ -153,5 +131,4 @@ export declare const sensitiveUrlSchema: z.ZodType<string | z.infer<typeof confi
+  * from the root of the config object, so that they are correctly reported to
+  * the user.
+  */
+-export declare function validateUserConfigZodType<Output, Def extends ZodTypeDef = ZodTypeDef, Input = Output>(hardhatUserConfig: HardhatUserConfigToValidate, configType: ZodType<Output, Def, Input>): HardhatUserConfigValidationError[];
+-//# sourceMappingURL=index.d.ts.map
+\ No newline at end of file
++export declare function validateUserConfigZodType<Output, Input = Output>(hardhatUserConfig: HardhatUserConfigToValidate, configType: ZodType<Output, Input>): HardhatUserConfigValidationError[];
+diff --git a/node_modules/@nomicfoundation/hardhat-zod-utils/dist/src/index.js b/node_modules/@nomicfoundation/hardhat-zod-utils/dist/src/index.js
+index ebd56b7..6e00714 100644
+--- a/node_modules/@nomicfoundation/hardhat-zod-utils/dist/src/index.js
++++ b/node_modules/@nomicfoundation/hardhat-zod-utils/dist/src/index.js
+@@ -72,7 +72,7 @@ export const conditionalUnionType = (cases, noMatchMessage) => z.any().superRefi
+     const parsedData = zodType.safeParse(data);
+     if (parsedData.error !== undefined) {
+         for (const issue of parsedData.error.issues) {
+-            ctx.addIssue(issue);
++            ctx.addIssue({ ...issue });
+         }
+     }
+ });
+@@ -108,9 +108,7 @@ export const conditionalUnionType = (cases, noMatchMessage) => z.any().superRefi
+  */
+ export const incompatibleFieldType = (errorMessage = "Unexpected field") => z
+     .never({
+-    errorMap: () => ({
+-        message: errorMessage,
+-    }),
++    error: errorMessage,
+ })
+     .optional();
+ /**
+@@ -127,10 +125,10 @@ export const configurationVariableSchema = z.object({
+  */
+ export const resolvedConfigurationVariableSchema = z.object({
+     _type: z.literal("ResolvedConfigurationVariable"),
+-    get: z.function(),
+-    getUrl: z.function(),
+-    getBigInt: z.function(),
+-    getHexString: z.function(),
++    get: z.custom((value) => typeof value === "function"),
++    getUrl: z.custom((value) => typeof value === "function"),
++    getBigInt: z.custom((value) => typeof value === "function"),
++    getHexString: z.custom((value) => typeof value === "function"),
+ });
+ /**
+  * A Zod type to validate Hardhat's SensitiveString values.
+@@ -164,8 +162,8 @@ export function validateUserConfigZodType(hardhatUserConfig, configType) {
+         return [];
+     }
+     else {
+-        return result.error.errors.map((issue) => ({
+-            path: issue.path,
++        return result.error.issues.map((issue) => ({
++            path: issue.path.map((key) => typeof key === "symbol" ? String(key) : key),
+             message: issue.message,
+         }));
+     }
+diff --git a/node_modules/@nomicfoundation/hardhat-zod-utils/src/index.ts b/node_modules/@nomicfoundation/hardhat-zod-utils/src/index.ts
+index 0d34086..1137f52 100644
+--- a/node_modules/@nomicfoundation/hardhat-zod-utils/src/index.ts
++++ b/node_modules/@nomicfoundation/hardhat-zod-utils/src/index.ts
+@@ -1,4 +1,4 @@
+-import type { ZodTypeDef, ZodType } from "zod";
++import type { ZodType } from "zod";
+ 
+ import { z } from "zod";
+ 
+@@ -30,7 +30,7 @@ export interface HardhatUserConfigValidationError {
+  */
+ // TODO: improve the return type of this function to be more specific
+ export const unionType = (
+-  types: Parameters<typeof z.union>[0],
++  types: ReadonlyArray<ZodType>,
+   errorMessage: string,
+ ) =>
+   // NOTE: The reason we use `z.any().superRefine` instead of `z.union` is that
+@@ -100,7 +100,7 @@ export const conditionalUnionType = (
+     const parsedData = zodType.safeParse(data);
+     if (parsedData.error !== undefined) {
+       for (const issue of parsedData.error.issues) {
+-        ctx.addIssue(issue);
++        ctx.addIssue({ ...issue });
+       }
+     }
+   });
+@@ -138,9 +138,7 @@ export const conditionalUnionType = (
+ export const incompatibleFieldType = (errorMessage = "Unexpected field") =>
+   z
+     .never({
+-      errorMap: () => ({
+-        message: errorMessage,
+-      }),
++      error: errorMessage,
+     })
+     .optional();
+ 
+@@ -159,10 +157,10 @@ export const configurationVariableSchema = z.object({
+  */
+ export const resolvedConfigurationVariableSchema = z.object({
+   _type: z.literal("ResolvedConfigurationVariable"),
+-  get: z.function(),
+-  getUrl: z.function(),
+-  getBigInt: z.function(),
+-  getHexString: z.function(),
++  get: z.custom<(...args: unknown[]) => unknown>((value) => typeof value === "function"),
++  getUrl: z.custom<(...args: unknown[]) => unknown>((value) => typeof value === "function"),
++  getBigInt: z.custom<(...args: unknown[]) => unknown>((value) => typeof value === "function"),
++  getHexString: z.custom<(...args: unknown[]) => unknown>((value) => typeof value === "function"),
+ });
+ 
+ /**
+@@ -205,19 +203,18 @@ export const sensitiveUrlSchema: z.ZodType<
+  */
+ export function validateUserConfigZodType<
+   Output,
+-  Def extends ZodTypeDef = ZodTypeDef,
+   Input = Output,
+ >(
+   hardhatUserConfig: HardhatUserConfigToValidate,
+-  configType: ZodType<Output, Def, Input>,
++  configType: ZodType<Output, Input>,
+ ): HardhatUserConfigValidationError[] {
+   const result = configType.safeParse(hardhatUserConfig);
+ 
+   if (result.success) {
+     return [];
+   } else {
+-    return result.error.errors.map((issue) => ({
+-      path: issue.path,
++    return result.error.issues.map((issue) => ({
++      path: issue.path.map((key) => typeof key === "symbol" ? String(key) : key),
+       message: issue.message,
+     }));
+   }

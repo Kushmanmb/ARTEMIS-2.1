@@ -27,9 +27,9 @@ contract ARTEMIS {
     address[] private _writerList;
 
     // -------------------------------------------------------------------------
-    // Immutable project metadata — written once at construction.
+    // Project metadata — written once at construction (strings cannot be immutable).
     // -------------------------------------------------------------------------
-    string  public immutable projectName;
+    string  public projectName; // set once in the constructor; no setter exists
     uint256 public immutable deployedAt;
 
     // -------------------------------------------------------------------------
