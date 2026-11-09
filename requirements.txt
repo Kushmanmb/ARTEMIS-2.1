@@ -5,7 +5,7 @@ aiohttp>=3.13.3
 
 # Ethereum/Web3 integration for mainnet deployment and contract interaction
 web3>=8.0.0
-py-solc-x>=2.0.3
+py-solc-x>=2.1.0
 eth-account>=0.14.0
 
 # Environment configuration
