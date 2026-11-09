@@ -33,11 +33,9 @@ ARTEMIS-2.1/
 │   ├── security_checks.py     # Vulnerability detection patterns
 │   ├── auto_fix.py            # Automated source-code patching
 │   ├── blockchain_monitor.py  # Base chain monitoring for kushmanmb.base.eth
-│   └── config.py              # Chain and monitoring configuration
-│   ├── auditor.py           # Main audit bot (CLI entry-point)
-│   ├── security_checks.py   # Vulnerability detection patterns
-│   ├── auto_fix.py          # Automated source-code patching
-│   └── network.py           # Ethereum network integration
+│   ├── config.py              # Chain and monitoring configuration
+│   ├── network.py             # Ethereum network integration
+│   └── snapshot_api.py        # Read-only snapshot API used by 0XCON
 ├── scripts/
 │   └── deploy.py            # Contract deployment script
 ├── deployments/
@@ -45,14 +43,16 @@ ARTEMIS-2.1/
 │   └── sepolia.json         # Sepolia testnet deployment record
 ├── tests/
 │   ├── test_auditor.py        # Unit & integration tests
-│   └── test_blockchain_monitor.py  # Blockchain monitoring tests
+│   ├── test_blockchain_monitor.py  # Blockchain monitoring tests
+│   └── test_snapshot_api.py   # Snapshot API tests
 ├── .github/
 │   ├── labels.yml           # GitHub label definitions
 │   ├── labeler.yml          # Auto-labeling configuration
 │   └── workflows/
-│       └── audit.yml          # 24/7 CI audit workflow
-│       ├── audit.yml        # 24/7 CI audit workflow
-│       └── deploy.yml       # Mainnet deployment workflow
+│       ├── audit.yml          # 24/7 CI audit workflow
+│       ├── contracts.yml      # Hardhat compile & contract tests
+│       ├── snapshot-api.yml   # Snapshot API tests
+│       └── deploy.yml         # Manual mainnet deployment workflow
 └── requirements.txt
 ```
 
@@ -180,3 +180,9 @@ deleted = cache.clear_old(max_age_seconds=0)  # Clear all
 Apache-2.0 — see [LICENSE](LICENSE).
 Space Blockchain smart contract bot  
 # ![image](https://github.com/user-attachments/assets/8c5a66cc-711a-4e1e-bd6f-b3d42320de68)
+
+---
+
+## Security
+
+Please report vulnerabilities privately. See [SECURITY.md](SECURITY.md).
