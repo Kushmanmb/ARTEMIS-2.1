@@ -85,62 +85,74 @@ jobs:
           WEB3_RPC_URL: ${{ secrets.WEB3_RPC_URL }}
           DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
           ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          INPUT_DRY_RUN: ${{ github.event.inputs.dry_run }}
+          INPUT_GAS_PRICE: ${{ github.event.inputs.gas_price }}
+          INPUT_NETWORK: ${{ github.event.inputs.network }}
+          INPUT_OWNER_NAME: ${{ github.event.inputs.owner_name }}
+          INPUT_PROJECT_NAME: ${{ github.event.inputs.project_name }}
         run: |
           DRY_RUN_FLAG=""
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+          if [ "$INPUT_DRY_RUN" = "true" ]; then
             DRY_RUN_FLAG="--dry-run"
           fi
           
           GAS_FLAG=""
-          if [ -n "${{ github.event.inputs.gas_price }}" ]; then
-            GAS_FLAG="--gas-price ${{ github.event.inputs.gas_price }}"
+          if [ -n "$INPUT_GAS_PRICE" ]; then
+            GAS_FLAG="--gas-price $INPUT_GAS_PRICE"
           fi
           
           # For mainnet, add DEPLOY confirmation via echo (CI doesn't have interactive input)
-          if [ "${{ github.event.inputs.network }}" = "ethereum" ] && [ -z "$DRY_RUN_FLAG" ]; then
+          if [ "$INPUT_NETWORK" = "ethereum" ] && [ -z "$DRY_RUN_FLAG" ]; then
             echo "DEPLOY" | python scripts/deploy.py \
-              --network ${{ github.event.inputs.network }} \
-              --owner-name "${{ github.event.inputs.owner_name }}" \
-              --project-name "${{ github.event.inputs.project_name }}" \
+              --network $INPUT_NETWORK \
+              --owner-name "$INPUT_OWNER_NAME" \
+              --project-name "$INPUT_PROJECT_NAME" \
               $GAS_FLAG
           else
             python scripts/deploy.py \
-              --network ${{ github.event.inputs.network }} \
-              --owner-name "${{ github.event.inputs.owner_name }}" \
-              --project-name "${{ github.event.inputs.project_name }}" \
+              --network $INPUT_NETWORK \
+              --owner-name "$INPUT_OWNER_NAME" \
+              --project-name "$INPUT_PROJECT_NAME" \
               $DRY_RUN_FLAG \
               $GAS_FLAG
           fi
 
       - name: Commit deployment record
         if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          INPUT_NETWORK: ${{ github.event.inputs.network }}
         run: |
           git config user.name "ARTEMIS Bot"
           git config user.email "artemis-bot@users.noreply.github.com"
           if ! git diff --quiet deployments/; then
             git add deployments/
-            git commit -m "chore(deploy): ARTEMIS deployed to ${{ github.event.inputs.network }} — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git commit -m "chore(deploy): ARTEMIS deployed to $INPUT_NETWORK — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             git push
           fi
 
       - name: Generate deployment summary
+        env:
+          INPUT_NETWORK: ${{ github.event.inputs.network }}
+          INPUT_OWNER_NAME: ${{ github.event.inputs.owner_name }}
+          INPUT_PROJECT_NAME: ${{ github.event.inputs.project_name }}
+          INPUT_DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: |
           cat <<EOF >> $GITHUB_STEP_SUMMARY
           ## 🚀 ARTEMIS Deployment
           
           | Parameter | Value |
           |-----------|-------|
-          | Network | ${{ github.event.inputs.network }} |
-          | Owner Name | ${{ github.event.inputs.owner_name }} |
-          | Project Name | ${{ github.event.inputs.project_name }} |
-          | Dry Run | ${{ github.event.inputs.dry_run }} |
+          | Network | $INPUT_NETWORK |
+          | Owner Name | $INPUT_OWNER_NAME |
+          | Project Name | $INPUT_PROJECT_NAME |
+          | Dry Run | $INPUT_DRY_RUN |
           
           EOF
           
-          if [ -f "deployments/${{ github.event.inputs.network }}.json" ]; then
+          if [ -f "deployments/$INPUT_NETWORK.json" ]; then
             echo "### Deployment Record" >> $GITHUB_STEP_SUMMARY
             echo '```json' >> $GITHUB_STEP_SUMMARY
-            cat "deployments/${{ github.event.inputs.network }}.json" >> $GITHUB_STEP_SUMMARY
+            cat "deployments/$INPUT_NETWORK.json" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
 
