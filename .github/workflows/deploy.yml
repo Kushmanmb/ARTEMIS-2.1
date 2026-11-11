@@ -34,6 +34,8 @@ jobs:
   deploy:
     name: Deploy ARTEMIS Contract
     runs-on: ubuntu-latest
+    # Require GitHub Environment approval for mainnet; configure reviewers before use.
+    environment: ${{ inputs.network == 'ethereum' && !inputs.dry_run && 'artemis-mainnet' || 'artemis-testnet' }}
     permissions:
       contents: write
     
@@ -68,12 +70,15 @@ jobs:
 
       - name: Validate deployment secrets
         if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          WEB3_RPC_URL: ${{ secrets.WEB3_RPC_URL }}
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
         run: |
-          if [ -z "${{ secrets.WEB3_RPC_URL }}" ]; then
+          if [ -z "$WEB3_RPC_URL" ]; then
             echo "❌ WEB3_RPC_URL secret is not set"
             exit 1
           fi
-          if [ -z "${{ secrets.DEPLOYER_PRIVATE_KEY }}" ]; then
+          if [ -z "$DEPLOYER_PRIVATE_KEY" ]; then
             echo "❌ DEPLOYER_PRIVATE_KEY secret is not set"
             exit 1
           fi
@@ -91,31 +96,32 @@ jobs:
           INPUT_OWNER_NAME: ${{ github.event.inputs.owner_name }}
           INPUT_PROJECT_NAME: ${{ github.event.inputs.project_name }}
         run: |
-          DRY_RUN_FLAG=""
+          set -euo pipefail
+          case "$INPUT_NETWORK" in
+            sepolia|goerli|ethereum) ;;
+            *) echo "Invalid deployment network" >&2; exit 1 ;;
+          esac
+          case "$INPUT_DRY_RUN" in
+            true|false) ;;
+            *) echo "Invalid dry-run value" >&2; exit 1 ;;
+          esac
+          args=(--network "$INPUT_NETWORK" --owner-name "$INPUT_OWNER_NAME" --project-name "$INPUT_PROJECT_NAME")
           if [ "$INPUT_DRY_RUN" = "true" ]; then
-            DRY_RUN_FLAG="--dry-run"
+            args+=(--dry-run)
           fi
-          
-          GAS_FLAG=""
           if [ -n "$INPUT_GAS_PRICE" ]; then
-            GAS_FLAG="--gas-price $INPUT_GAS_PRICE"
+            if ! [[ "$INPUT_GAS_PRICE" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+              echo "Invalid gas price (expected numeric Gwei)" >&2
+              exit 1
+            fi
+            args+=(--gas-price "$INPUT_GAS_PRICE")
           fi
-          
-          # For mainnet, add DEPLOY confirmation via echo (CI doesn't have interactive input)
-          if [ "$INPUT_NETWORK" = "ethereum" ] && [ -z "$DRY_RUN_FLAG" ]; then
-            echo "DEPLOY" | python scripts/deploy.py \
-              --network $INPUT_NETWORK \
-              --owner-name "$INPUT_OWNER_NAME" \
-              --project-name "$INPUT_PROJECT_NAME" \
-              $GAS_FLAG
-          else
-            python scripts/deploy.py \
-              --network $INPUT_NETWORK \
-              --owner-name "$INPUT_OWNER_NAME" \
-              --project-name "$INPUT_PROJECT_NAME" \
-              $DRY_RUN_FLAG \
-              $GAS_FLAG
+          # Never auto-confirm an irreversible mainnet deployment from CI.
+          if [ "$INPUT_NETWORK" = "ethereum" ] && [ "$INPUT_DRY_RUN" = "false" ]; then
+            echo "Live Ethereum deployment requires a separate owner-approved manual process." >&2
+            exit 1
           fi
+          python scripts/deploy.py "${args[@]}"
 
       - name: Commit deployment record
         if: ${{ github.event.inputs.dry_run != 'true' }}
@@ -137,18 +143,15 @@ jobs:
           INPUT_PROJECT_NAME: ${{ github.event.inputs.project_name }}
           INPUT_DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: |
-          cat <<EOF >> $GITHUB_STEP_SUMMARY
-          ## 🚀 ARTEMIS Deployment
-          
-          | Parameter | Value |
-          |-----------|-------|
-          | Network | $INPUT_NETWORK |
-          | Owner Name | $INPUT_OWNER_NAME |
-          | Project Name | $INPUT_PROJECT_NAME |
-          | Dry Run | $INPUT_DRY_RUN |
-          
-          EOF
-          
+          # Print values as data, not shell source or heredoc content.
+          printf '## ARTEMIS Deployment\n\n| Parameter | Value |\n|-----------|-------|\n' >> "$GITHUB_STEP_SUMMARY"
+          for key in INPUT_NETWORK INPUT_OWNER_NAME INPUT_PROJECT_NAME INPUT_DRY_RUN; do
+            value="${!key}"
+            value="${value//$'\n'/ }"
+            value="${value//|/\\|}"
+            printf '| %s | %s |\n' "$key" "$value" >> "$GITHUB_STEP_SUMMARY"
+          done
+
           if [ -f "deployments/$INPUT_NETWORK.json" ]; then
             echo "### Deployment Record" >> $GITHUB_STEP_SUMMARY
             echo '```json' >> $GITHUB_STEP_SUMMARY
