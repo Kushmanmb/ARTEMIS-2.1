@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       auto_fix:
-        description: "Apply automated fixes to source files"
+        description: "Generate a reviewable patch; source files are not modified"
         required: false
         default: "false"
         type: choice
@@ -90,7 +90,7 @@ jobs:
           counts = report["summary"]["severity_counts"]
           files = report["summary"]["files_scanned"]
           findings = report["summary"]["total_findings"]
-          fixes = report["summary"]["total_auto_fixes_applied"]
+          fixes = report["summary"]["total_auto_fixes_proposed"]
           
           summary = f"""## 🛡️ ARTEMIS Security Audit Report
           
@@ -98,7 +98,7 @@ jobs:
           |--------|-------|
           | Files Scanned | {files} |
           | Total Findings | {findings} |
-          | Auto-Fixes Applied | {fixes} |
+          | Safe Patch Proposals | {fixes} |
           
           ### Severity Breakdown
           
@@ -135,18 +135,12 @@ jobs:
           EOF
 
   auto-fix:
-    name: Apply approved audit patches on a review branch
+    name: Generate a reviewable audit patch
     if: github.event_name == 'workflow_dispatch' && inputs.auto_fix == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
-      - name: Refuse direct changes on main
-        run: |
-          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
-            echo "Auto-fixes must run on a review branch; main is blocked."
-            exit 1
-          fi
       - name: Checkout repository
         uses: actions/checkout@v7
       - name: Set up Python
@@ -156,15 +150,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Generate reviewable audit patches
-        run: python -m bot.auditor --path contracts --report audit-report.json --fix
-      - name: Commit patches to the selected review branch
-        run: |
-          git config user.name "ARTEMIS Bot"
-          git config user.email "artemis-bot@users.noreply.github.com"
-          if ! git diff --quiet; then
-            git add contracts/
-            git commit -m "chore(security): generate reviewable ARTEMIS audit patches"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
-          else
-            echo "No patches were generated."
-          fi
+        run: python -m bot.auditor --path contracts --report audit-report.json --fix --patch-output artemis-fixes.patch
+        continue-on-error: true
+      - name: Upload proposed patch and report
+        uses: actions/upload-artifact@v7
+        with:
+          name: artemis-reviewable-audit-patch-${{ github.run_number }}
+          path: |
+            artemis-fixes.patch
+            audit-report.json
+          if-no-files-found: error

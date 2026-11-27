@@ -134,7 +134,9 @@ class SnapshotHandler(BaseHTTPRequestHandler):
         LOG.info("HTTP request completed")
 
 
-def create_server(host: str = "0.0.0.0", port: int = 10000) -> ThreadingHTTPServer:
+def create_server(host: str = "0.0.0.0", port: int = 10000) -> ThreadingHTTPServer:  # nosec B104
+    # Render's isolated service container must bind all interfaces; the API
+    # requires a strong Bearer key and remains owner-to-owner only.
     server = ThreadingHTTPServer((host, port), SnapshotHandler)
     server.daemon_threads = True
     return server
