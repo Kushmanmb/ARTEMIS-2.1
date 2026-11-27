@@ -151,6 +151,7 @@ class TestCheckReentrancy:
     def test_reentrancy_is_detected(self):
         findings = check_reentrancy(VULNERABLE_REENTRANCY)
         assert any(f.check_name == "REENTRANCY" for f in findings)
+        assert all(not f.auto_fixable for f in findings)
 
     def test_clean_contract_no_reentrancy(self):
         # The clean contract does a state-write BEFORE the call, so no finding
@@ -181,13 +182,14 @@ class TestCheckIntegerOverflow:
     def test_finding_is_auto_fixable(self):
         findings = check_integer_overflow(VULNERABLE_OLD_PRAGMA)
         overflow = [f for f in findings if f.check_name == "INTEGER_OVERFLOW"]
-        assert all(f.auto_fixable for f in overflow)
+        assert all(not f.auto_fixable for f in overflow)
 
 
 class TestCheckSelfdestruct:
     def test_unprotected_selfdestruct_detected(self):
         findings = check_unprotected_selfdestruct(VULNERABLE_SELFDESTRUCT)
         assert any(f.check_name == "UNPROTECTED_SELFDESTRUCT" for f in findings)
+        assert all(not f.auto_fixable for f in findings)
 
     def test_severity_is_critical(self):
         findings = check_unprotected_selfdestruct(VULNERABLE_SELFDESTRUCT)
@@ -202,6 +204,7 @@ class TestCheckTxOrigin:
     def test_tx_origin_auth_detected(self):
         findings = check_tx_origin_auth(VULNERABLE_TX_ORIGIN)
         assert any(f.check_name == "TX_ORIGIN_AUTH" for f in findings)
+        assert all(not f.auto_fixable for f in findings)
 
     def test_clean_no_tx_origin(self):
         assert check_tx_origin_auth(CLEAN_CONTRACT) == []
@@ -216,6 +219,7 @@ class TestCheckUncheckedCall:
     def test_unchecked_call_detected(self):
         findings = check_unchecked_call_return(VULNERABLE_UNCHECKED_CALL)
         assert any(f.check_name == "UNCHECKED_CALL_RETURN" for f in findings)
+        assert all(not f.auto_fixable for f in findings)
 
     def test_clean_call_not_flagged(self):
         # Clean contract wraps .call with (bool success, ) = …
@@ -237,14 +241,24 @@ class TestCheckHardcodedAddress:
 
 class TestAutoFix:
     def test_fix_spdx(self):
-        new_source, changed = apply_fix(NO_SPDX, Finding(
+        finding = Finding(
             check_name="MISSING_SPDX_LICENSE",
             severity=Severity.INFO,
             description="",
             auto_fixable=True,
-        ))
+        )
+        unchanged, changed_without_license = apply_fix(NO_SPDX, finding)
+        assert not changed_without_license
+        assert unchanged == NO_SPDX
+        new_source, changed = apply_fix(NO_SPDX, finding, "MIT")
         assert changed
-        assert new_source.startswith("// SPDX-License-Identifier:")
+        assert new_source.startswith("// SPDX-License-Identifier: MIT")
+
+    def test_spdx_fix_rejects_invalid_identifier(self):
+        finding = Finding("MISSING_SPDX_LICENSE", Severity.INFO, "", auto_fixable=True)
+        source, changed = apply_fix(NO_SPDX, finding, "MIT */\npragma solidity")
+        assert not changed
+        assert source == NO_SPDX
 
     def test_fix_spdx_idempotent(self):
         source_with_spdx = "// SPDX-License-Identifier: MIT\n" + NO_SPDX
@@ -256,7 +270,7 @@ class TestAutoFix:
         ))
         assert not changed
 
-    def test_fix_tx_origin(self):
+    def test_tx_origin_fix_is_refused_as_behavior_changing(self):
         finding = Finding(
             check_name="TX_ORIGIN_AUTH",
             severity=Severity.HIGH,
@@ -264,11 +278,10 @@ class TestAutoFix:
             auto_fixable=True,
         )
         new_source, changed = apply_fix(VULNERABLE_TX_ORIGIN, finding)
-        assert changed
-        assert "tx.origin" not in new_source
-        assert "msg.sender" in new_source
+        assert not changed
+        assert new_source == VULNERABLE_TX_ORIGIN
 
-    def test_fix_pragma_upgrade(self):
+    def test_pragma_upgrade_is_refused_as_behavior_changing(self):
         finding = Finding(
             check_name="INTEGER_OVERFLOW",
             severity=Severity.HIGH,
@@ -276,8 +289,8 @@ class TestAutoFix:
             auto_fixable=True,
         )
         new_source, changed = apply_fix(VULNERABLE_OLD_PRAGMA, finding)
-        assert changed
-        assert "pragma solidity ^0.8.20;" in new_source
+        assert not changed
+        assert new_source == VULNERABLE_OLD_PRAGMA
 
     def test_no_fix_for_non_fixable(self):
         finding = Finding(
@@ -298,12 +311,12 @@ class TestAutoFix:
             Finding(check_name="MISSING_SPDX_LICENSE", severity=Severity.INFO,
                     description="", auto_fixable=True),
             Finding(check_name="TX_ORIGIN_AUTH", severity=Severity.HIGH,
-                    description="", auto_fixable=True),
+                    description="", auto_fixable=False),
         ]
-        new_source, count = apply_all_fixes(source, findings)
-        assert count == 2
+        new_source, count = apply_all_fixes(source, findings, "MIT")
+        assert count == 1
         assert "SPDX-License-Identifier" in new_source
-        assert "tx.origin" not in new_source
+        assert "tx.origin" in new_source
 
 
 # ---------------------------------------------------------------------------
@@ -387,9 +400,20 @@ class TestRunScan:
         assert "meta" in data
         assert "summary" in data
 
-    def test_auto_fix_modifies_file(self, tmp_path):
-        sol = tmp_path / "old.sol"
-        sol.write_text(VULNERABLE_OLD_PRAGMA, encoding="utf-8")
-        run_scan(sol, auto_fix=True, report_path=None)
-        updated = sol.read_text()
-        assert "^0.8.20" in updated
+    def test_fix_generates_reviewable_patch_without_modifying_source(self, tmp_path):
+        sol = tmp_path / "unlicensed.sol"
+        sol.write_text(NO_SPDX, encoding="utf-8")
+        original = sol.read_text(encoding="utf-8")
+        patch = tmp_path / "proposed.patch"
+        report = tmp_path / "report.json"
+
+        run_scan(sol, auto_fix=True, report_path=str(report), patch_output=str(patch), spdx_license="MIT")
+
+        assert sol.read_text(encoding="utf-8") == original
+        proposal = patch.read_text(encoding="utf-8")
+        assert "--- a/unlicensed.sol" in proposal
+        assert "+++ b/unlicensed.sol" in proposal
+        assert "+// SPDX-License-Identifier: MIT" in proposal
+        data = json.loads(report.read_text(encoding="utf-8"))
+        assert data["summary"]["total_auto_fixes_applied"] == 0
+        assert data["summary"]["total_auto_fixes_proposed"] == 1

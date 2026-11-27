@@ -2,7 +2,7 @@
 
 **A**utonomous **R**eal-**T**ime **E**thereum **M**onitor & **I**mmutable **S**ecurity
 
-> Space Blockchain smart contract bot — 24/7 continuous security audit, auto-fix, immutable owner provenance, and blockchain monitoring for contracts deployed from kushmanmb.base.eth.
+> Space Blockchain smart contract bot — continuous heuristic security scans, reviewable safe patch proposals, owner provenance, and blockchain-monitoring components for contracts associated with kushmanmb.base.eth.
 
 ---
 
@@ -11,7 +11,7 @@
 | Capability | Details |
 |---|---|
 | 🔒 Continuous Audit | Scans every Solidity contract for known vulnerability patterns |
-| 🛠 Auto-Fix | Automatically patches safe, well-understood issues (reentrancy ordering, tx.origin, unchecked calls, old pragma, missing SPDX) |
+| 🛠 Auto-Fix | Generates reviewable patches only for explicitly approved metadata fixes; security logic is never rewritten |
 | 💀 24/7 CI Coverage | GitHub Actions workflow runs on every push, PR, and on a 6-hour cron schedule |
 | 📜 Immutable Owner Info | `ARTEMIS.sol` stores owner address, name, and deploy timestamp as `immutable` values — cannot be changed post-deploy |
 | 🗂 On-Chain Audit Log | Findings can be recorded on-chain via `reportFinding()` so the audit trail is tamper-proof |
@@ -31,7 +31,7 @@ ARTEMIS-2.1/
 ├── bot/
 │   ├── auditor.py             # Main audit bot (CLI entry-point)
 │   ├── security_checks.py     # Vulnerability detection patterns
-│   ├── auto_fix.py            # Automated source-code patching
+│   ├── auto_fix.py            # Conservative reviewable patch proposals
 │   ├── blockchain_monitor.py  # Base chain monitoring for kushmanmb.base.eth
 │   ├── config.py              # Chain and monitoring configuration
 │   ├── network.py             # Ethereum network integration
@@ -67,8 +67,8 @@ pip install -r requirements.txt
 # Audit the contracts/ directory once
 python -m bot.auditor
 
-# Audit with auto-fix enabled
-python -m bot.auditor --fix
+# Generate a reviewable SPDX-header patch only when the contract's license is known
+python -m bot.auditor --fix --spdx-license MIT --patch-output artemis-fixes.patch
 
 # Watch mode — re-scan every 5 minutes (24/7)
 python -m bot.auditor --watch --interval 300
@@ -128,14 +128,14 @@ python -m bot.auditor --monitor --interval 30
 
 | Check | Severity | Auto-Fix |
 |---|---|---|
-| `REENTRANCY` | HIGH | ✅ (fix hint) |
-| `INTEGER_OVERFLOW` | HIGH | ✅ (pragma upgrade) |
-| `UNPROTECTED_SELFDESTRUCT` | CRITICAL | ✅ (adds modifier) |
-| `TX_ORIGIN_AUTH` | HIGH | ✅ (replace with msg.sender) |
-| `UNCHECKED_CALL_RETURN` | MEDIUM | ✅ (wrap with require) |
+| `REENTRANCY` | HIGH | ❌ (manual behavior review required) |
+| `INTEGER_OVERFLOW` | HIGH | ❌ (manual compiler and behavior review required) |
+| `UNPROTECTED_SELFDESTRUCT` | CRITICAL | ❌ (manual access-control review required) |
+| `TX_ORIGIN_AUTH` | HIGH | ❌ (manual authorization review required) |
+| `UNCHECKED_CALL_RETURN` | MEDIUM | ❌ (manual failure-semantics review required) |
 | `MISSING_ACCESS_CONTROL` | MEDIUM | ❌ (manual review needed) |
 | `HARDCODED_ADDRESS` | LOW | ❌ (manual review needed) |
-| `MISSING_SPDX_LICENSE` | INFO | ✅ (prepend header) |
+| `MISSING_SPDX_LICENSE` | INFO | ✅ (patch only when an explicit SPDX identifier is supplied) |
 
 ### Bytecode Analysis (Blockchain Monitor)
 

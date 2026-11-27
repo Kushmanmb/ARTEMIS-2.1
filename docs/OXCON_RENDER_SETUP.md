@@ -12,8 +12,8 @@ rather than inventing deployments, block coverage, or findings.
 - Merge the snapshot API PR after the Python tests pass.
 - Use a **dedicated Render service** for `Kushmanmb/ARTEMIS-2.1`.
 - Do not deploy or change any existing Recovery Forward Foundation services.
-- Keep `bot.auditor --fix`, GitHub auto-fixes, wallet transactions, and
-  the `bot.auditor --monitor` CLI disabled in this web service.
+- Keep patch generation, patch application, wallet transactions, and the
+  `bot.auditor --monitor` CLI disabled in this web service.
 - Verify authorization, billing plan, domain, and environment before
   enabling a public-facing service.
 

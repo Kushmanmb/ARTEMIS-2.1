@@ -178,8 +178,8 @@ class BaseNamesResolver:
                 address = resolver.functions.addr(node).call()
                 if address and address != '0x' + '0' * 40:
                     return Web3.to_checksum_address(address)
-            except Exception:
-                pass
+            except Exception as exc:
+                log.debug("Direct name lookup failed (%s)", type(exc).__name__)
             
             # Try with DNS-encoded name
             try:
@@ -190,8 +190,8 @@ class BaseNamesResolver:
                 if result and len(result) >= 20:
                     address = '0x' + result[-20:].hex()
                     return Web3.to_checksum_address(address)
-            except Exception:
-                pass
+            except Exception as exc:
+                log.debug("DNS-encoded name lookup failed (%s)", type(exc).__name__)
             
             log.warning("Could not resolve name: %s", name)
             return None
@@ -249,8 +249,8 @@ class ContractFactoryMonitor:
             ]:
                 try:
                     topics.append(Web3.keccak(text=sig).hex())
-                except Exception:
-                    pass
+                except Exception as exc:
+                    log.debug("Skipping invalid event signature (%s)", type(exc).__name__)
         return list(set(topics))  # Remove duplicates
 
     def get_deployed_contracts(
@@ -327,8 +327,11 @@ class ContractFactoryMonitor:
                                 block_number=log_entry["blockNumber"],
                                 timestamp=block.get("timestamp", 0),
                             ))
-                        except Exception:
-                            pass
+                        except Exception as exc:
+                            log.debug(
+                                "Skipping malformed deployment log (%s)",
+                                type(exc).__name__,
+                            )
         except Exception as e:
             log.debug("Error getting logs: %s", e)
         
@@ -392,8 +395,10 @@ class ContractFactoryMonitor:
                                         block_number=block_num,
                                         timestamp=block.get("timestamp", 0),
                                     ))
-                except Exception:
-                    pass  # Tracing not supported on this node
+                except Exception as exc:
+                    # Tracing is optional and unsupported by some RPC providers.
+                    # Log only the exception class to avoid leaking RPC URLs.
+                    log.debug("Trace lookup unavailable (%s)", type(exc).__name__)
         except Exception as e:
             log.debug("Error getting traces: %s", e)
         

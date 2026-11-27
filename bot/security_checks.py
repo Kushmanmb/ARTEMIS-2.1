@@ -58,7 +58,7 @@ def check_reentrancy(source: str) -> List[Finding]:
                             f"by state write on line {j}. Use checks-effects-interactions pattern."
                         ),
                         line_numbers=[i, j],
-                        auto_fixable=True,
+                        auto_fixable=False,
                         fix_hint=(
                             "Move all state updates BEFORE the external call, "
                             "or use a ReentrancyGuard modifier."
@@ -95,7 +95,7 @@ def check_integer_overflow(source: str) -> List[Finding]:
                         f"(Solidity {version_str}). Use SafeMath or upgrade to ^0.8.0."
                     ),
                     line_numbers=[line_num],
-                    auto_fixable=True,
+                    auto_fixable=False,
                     fix_hint="Upgrade pragma to ^0.8.0 or wrap arithmetic with SafeMath.",
                 ))
     return findings
@@ -128,7 +128,7 @@ def check_unprotected_selfdestruct(source: str) -> List[Finding]:
                         "Any caller could destroy the contract."
                     ),
                     line_numbers=[i],
-                    auto_fixable=True,
+                    auto_fixable=False,
                     fix_hint="Add an onlyOwner (or equivalent) modifier before selfdestruct.",
                 ))
     return findings
@@ -150,7 +150,7 @@ def check_tx_origin_auth(source: str) -> List[Finding]:
                     "Susceptible to phishing / contract-relay attacks."
                 ),
                 line_numbers=[i],
-                auto_fixable=True,
+                auto_fixable=False,
                 fix_hint="Replace tx.origin with msg.sender for authorization checks.",
             ))
     return findings
@@ -173,7 +173,7 @@ def check_unchecked_call_return(source: str) -> List[Finding]:
                     "Silent failures can leave the contract in an inconsistent state."
                 ),
                 line_numbers=[i],
-                auto_fixable=True,
+                auto_fixable=False,
                 fix_hint=(
                     "Capture the return value: `(bool success, ) = addr.call{...}(data);` "
                     "then `require(success, 'call failed');`."
@@ -270,7 +270,7 @@ def check_spdx_license(source: str) -> List[Finding]:
             severity=Severity.INFO,
             description="No SPDX-License-Identifier found. Add one to suppress compiler warnings.",
             auto_fixable=True,
-            fix_hint="Add `// SPDX-License-Identifier: Apache-2.0` at the top of the file.",
+            fix_hint="Add the contract's correct SPDX identifier; do not assume or change its license.",
         )]
     return []
 
