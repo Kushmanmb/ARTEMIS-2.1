@@ -36,8 +36,7 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # needed to commit auto-fixes
-      pull-requests: write
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -68,14 +67,9 @@ jobs:
       - name: Run ARTEMIS security audit
         id: audit
         run: |
-          FIX_FLAG=""
-          if [ "${{ github.event.inputs.auto_fix }}" = "true" ]; then
-            FIX_FLAG="--fix"
-          fi
           python -m bot.auditor \
             --path contracts \
-            --report audit-report.json \
-            $FIX_FLAG
+            --report audit-report.json
         continue-on-error: true   # upload report even if findings exist
 
       - name: Upload audit report
@@ -124,19 +118,6 @@ jobs:
               f.write(summary)
           EOF
 
-      - name: Commit auto-fixes (if any)
-        if: github.event.inputs.auto_fix == 'true' && github.event_name != 'pull_request'
-        run: |
-          git config user.name  "ARTEMIS Bot"
-          git config user.email "artemis-bot@users.noreply.github.com"
-          if ! git diff --quiet; then
-            git add contracts/
-            git commit -m "chore(security): ARTEMIS auto-fix — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            git push
-          else
-            echo "No changes to commit."
-          fi
-
       - name: Fail on critical/high findings
         run: |
           python - <<'EOF'
@@ -152,3 +133,38 @@ jobs:
           else:
               print("✅ ARTEMIS: No critical or high severity issues found.")
           EOF
+
+  auto-fix:
+    name: Apply approved audit patches on a review branch
+    if: github.event_name == 'workflow_dispatch' && inputs.auto_fix == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Refuse direct changes on main
+        run: |
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            echo "Auto-fixes must run on a review branch; main is blocked."
+            exit 1
+          fi
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Generate reviewable audit patches
+        run: python -m bot.auditor --path contracts --report audit-report.json --fix
+      - name: Commit patches to the selected review branch
+        run: |
+          git config user.name "ARTEMIS Bot"
+          git config user.email "artemis-bot@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add contracts/
+            git commit -m "chore(security): generate reviewable ARTEMIS audit patches"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          else
+            echo "No patches were generated."
+          fi
