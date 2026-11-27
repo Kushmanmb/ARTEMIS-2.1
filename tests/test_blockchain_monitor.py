@@ -33,6 +33,7 @@ from bot.config import (
     BASE_MAINNET,
     BASE_SEPOLIA,
     ETHEREUM_MAINNET,
+    ETHEREUM_SEPOLIA,
 )
 
 # Try to import blockchain_monitor - it may fail if web3 is not installed
@@ -75,6 +76,11 @@ class TestChainConfig:
         assert ETHEREUM_MAINNET.name == "Ethereum Mainnet"
         assert ETHEREUM_MAINNET.ens_registry is not None
 
+    def test_ethereum_sepolia_config(self):
+        assert ETHEREUM_SEPOLIA.chain_id == 11155111
+        assert ETHEREUM_SEPOLIA.name == "Ethereum Sepolia"
+        assert ETHEREUM_SEPOLIA.explorer_url == "https://sepolia.etherscan.io"
+
 
 class TestMotherContractConfig:
     def test_default_config_has_kushmanmb(self):
@@ -113,6 +119,9 @@ class TestGetChainConfig:
     def test_get_ethereum_chain(self):
         chain = get_chain_config("ethereum")
         assert chain.chain_id == 1
+
+    def test_get_ethereum_sepolia_chain(self):
+        assert get_chain_config("ethereum-sepolia").chain_id == 11155111
         
     def test_get_eth_alias(self):
         chain = get_chain_config("eth")
@@ -208,6 +217,11 @@ class TestBytecodeAnalyzer:
         selfdestruct_findings = [f for f in findings if "SELFDESTRUCT" in f.check_name]
         assert len(selfdestruct_findings) == 1
         assert selfdestruct_findings[0].severity == Severity.CRITICAL
+
+    def test_opcode_in_push_data_is_not_reported(self):
+        analyzer = BytecodeAnalyzer()
+        findings = analyzer.analyze_bytecode("0x60ff" + "60" * 60)
+        assert not any(f.check_name == "BYTECODE_SELFDESTRUCT" for f in findings)
 
     def test_detect_delegatecall(self):
         # f4 is DELEGATECALL opcode
@@ -338,6 +352,30 @@ class TestBlockchainMonitor:
         status = monitor.get_status()
         assert status["mother_contract"]["ens_name"] == "kushmanmb.base.eth"
         assert status["mother_contract"]["chain"] == "Base Mainnet"
+
+    @patch("bot.blockchain_monitor.Web3")
+    def test_connect_rejects_chain_id_mismatch(self, web3_class):
+        client = web3_class.return_value
+        client.is_connected.return_value = True
+        client.eth.chain_id = 1
+        monitor = BlockchainMonitor(monitor_config=MonitorConfig(rpc_timeout=7))
+
+        assert monitor.connect("https://rpc.example.invalid") is False
+        assert monitor.w3 is None
+        web3_class.HTTPProvider.assert_called_once_with(
+            "https://rpc.example.invalid",
+            request_kwargs={"timeout": 7},
+        )
+
+    @patch("bot.blockchain_monitor.Web3")
+    def test_connect_accepts_configured_chain(self, web3_class):
+        client = web3_class.return_value
+        client.is_connected.return_value = True
+        client.eth.chain_id = BASE_MAINNET.chain_id
+        monitor = BlockchainMonitor()
+
+        assert monitor.connect() is True
+        assert monitor.w3 is client
 
 
 @pytest.mark.skipif(not BLOCKCHAIN_MONITOR_AVAILABLE, reason="web3 not installed")

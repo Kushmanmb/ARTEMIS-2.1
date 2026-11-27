@@ -67,6 +67,14 @@ ETHEREUM_MAINNET = ChainConfig(
     ens_registry="0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
 )
 
+ETHEREUM_SEPOLIA = ChainConfig(
+    chain_id=11155111,
+    name="Ethereum Sepolia",
+    rpc_url="https://ethereum-sepolia-rpc.publicnode.com",
+    explorer_url="https://sepolia.etherscan.io",
+    ens_registry="0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+)
+
 # Registry of all supported chains
 CHAINS: Dict[str, ChainConfig] = {
     "base": BASE_MAINNET,
@@ -74,6 +82,8 @@ CHAINS: Dict[str, ChainConfig] = {
     "base-sepolia": BASE_SEPOLIA,
     "ethereum": ETHEREUM_MAINNET,
     "eth": ETHEREUM_MAINNET,
+    "ethereum-sepolia": ETHEREUM_SEPOLIA,
+    "eth-sepolia": ETHEREUM_SEPOLIA,
 }
 
 
@@ -136,6 +146,7 @@ class MonitorConfig:
     auto_pause_on_critical: bool = True  # pause monitoring on critical findings
     retry_attempts: int = 3  # number of retries for failed RPC calls
     retry_delay: int = 5  # seconds between retries
+    rpc_timeout: int = 10  # seconds for each HTTP RPC request
     enable_alerts: bool = True
     alert_webhook_url: Optional[str] = None  # webhook for alerts
 

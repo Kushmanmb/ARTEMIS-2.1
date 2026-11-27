@@ -460,31 +460,46 @@ class BytecodeAnalyzer:
         if not bytecode or bytecode == "0x":
             return []
         
-        # Normalize bytecode
+        # Normalize and decode bytecode so opcode-looking bytes inside PUSH
+        # immediate data are not misreported as executable instructions.
         bytecode_hex = bytecode.lower()
         if bytecode_hex.startswith("0x"):
             bytecode_hex = bytecode_hex[2:]
+
+        try:
+            code = bytes.fromhex(bytecode_hex)
+        except ValueError:
+            log.warning("Skipping bytecode analysis because the hex is malformed")
+            return []
+
+        instructions: list[tuple[int, int]] = []
+        pc = 0
+        while pc < len(code):
+            opcode = code[pc]
+            instructions.append((opcode, pc))
+            pc += 1
+            if 0x60 <= opcode <= 0x7F:  # PUSH1 through PUSH32
+                pc += min(opcode - 0x5F, len(code) - pc)
         
         findings: List[Finding] = []
         
         # Check for dangerous opcodes
         for pattern_name, pattern_info in self.DANGEROUS_PATTERNS.items():
-            opcode = pattern_info["opcode"]
-            # Look for the opcode in the bytecode
-            # Note: This is a simplified check - a proper analysis would parse opcodes
-            idx = 0
-            while idx < len(bytecode_hex):
-                if bytecode_hex[idx:idx+2] == opcode:
+            opcode = int(pattern_info["opcode"], 16)
+            for actual_opcode, position in instructions:
+                if actual_opcode == opcode:
                     findings.append(Finding(
                         check_name=f"BYTECODE_{pattern_name}",
                         severity=pattern_info["severity"],
-                        description=f"{pattern_info['description']} (found at byte position {idx//2})",
-                        line_numbers=[idx // 2],
+                        description=(
+                            f"{pattern_info['description']} "
+                            f"(found at byte position {position})"
+                        ),
+                        line_numbers=[position],
                         auto_fixable=False,
                         fix_hint=f"Review the {pattern_name} usage for potential security implications.",
                     ))
                     break  # Only report once per pattern
-                idx += 2
         
         # Check bytecode hash against known malicious patterns
         if WEB3_AVAILABLE:
@@ -559,7 +574,10 @@ class BlockchainMonitor:
         url = rpc_url or self.mother_config.chain.rpc_url
         
         try:
-            self.w3 = Web3(Web3.HTTPProvider(url))
+            self.w3 = Web3(Web3.HTTPProvider(
+                url,
+                request_kwargs={"timeout": self.monitor_config.rpc_timeout},
+            ))
             
             if not self.w3.is_connected():
                 log.error("Failed to connect to %s", url)
@@ -572,13 +590,16 @@ class BlockchainMonitor:
                 chain_id
             )
             
-            # Verify chain ID
+            # A mismatch must fail closed so the monitor cannot scan the
+            # wrong network while reporting the configured chain's identity.
             if chain_id != self.mother_config.chain.chain_id:
-                log.warning(
+                log.error(
                     "Chain ID mismatch! Expected %d, got %d",
                     self.mother_config.chain.chain_id,
                     chain_id
                 )
+                self.w3 = None
+                return False
             
             # Initialize components
             self.resolver = BaseNamesResolver(self.w3)
